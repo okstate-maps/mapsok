@@ -1,0 +1,32 @@
+.App {
+  text-align: center;
+  display: grid;
+  grid-gap: 0;
+  grid-template-areas:
+     "header header header"
+     "sidebar map map";
+  grid-template-rows: 100px 1fr;
+  grid-template-columns: 200px 1fr;
+}
+
+.foo {
+  height:100px;background-color:yellow;width:190px;
+  margin:5px;
+}
+.App-header {
+  grid-area:header;
+  background-color: red;
+}
+
+.App-sidebar {
+  grid-area: sidebar;
+  background-color: blue;
+}
+.App-map {
+  grid-area: map;
+  background-color: green;
+}
+
+.App-link {
+  color: #61dafb;
+}
