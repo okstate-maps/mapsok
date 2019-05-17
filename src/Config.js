@@ -4,7 +4,6 @@ const Config = {
 	"carto_table": "okmaps2",
 	"carto_base_api": "https://{{username}}.carto.com/api/v2/sql",
 	"carto_base_query": "SELECT {{fields}} FROM {{table_name}}",
-	"dev_query": "SELECT title FROM okmaps2 LIMIT 10",
 	"carto_table_fields": [
 	  "the_geom", 
 	  "title", 
