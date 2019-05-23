@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Config from './Config';
 import MapView from './MapView';
+import Sidebar from './Sidebar';
 import axios from 'axios';
 import URLSearchParams from '@ungap/url-search-params' //URLSearchParams polyfill
 import './App.css';
@@ -78,18 +79,7 @@ class App extends Component {
         <header className="App-header">
          <h1>header</h1>
         </header>
-        <section className="App-sidebar">
-          <h1>sidebar</h1>
-          <div className="flexlist">
-            <div className="foo"></div>
-            <div className="foo"></div>
-            <div className="foo"></div>
-            <div className="foo"></div>
-            <div className="foo"></div>
-            <div className="foo"></div>
-            <div className="foo"></div>
-          </div>
-        </section>
+         <Sidebar />
         <section className="App-map">
           <MapView />  
         </section>

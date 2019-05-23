@@ -1,0 +1,44 @@
+
+.Sidebar {
+  grid-area: sidebar;
+  background-color: blue;
+  overflow-y: scroll;
+  min-width: 150px;
+}
+
+.flexlist {
+  display: flex;
+  flex-direction: column;
+}
+.foo {
+  height:160px;
+  background-color:yellow;
+  margin:12px 25px;
+}
+
+/*
+Move sidebar to bottom of phone when screen is less than 500px wide
+*/
+
+@media (max-width: 500px) {
+
+  .flexlist {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .Sidebar h1 {
+    display: none;
+  }
+
+  .flexlist .foo {
+    height: 13  0px;
+    width: 160px;
+    flex: 1 0 auto;
+    margin: 15px 10px;
+    
+  }
+}
+
+
+
