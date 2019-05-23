@@ -3,7 +3,6 @@ html, body, #root, .App {
 }
 
 .App {
-  text-align: center;
   display: grid;
   grid-gap: 0;
   grid-template-areas:
@@ -25,11 +24,13 @@ html, body, #root, .App {
   margin:12px 25px;
 }
 .App-header {
+  text-align: center;
   grid-area: header;
   background-color: red;
 }
 
 .App-sidebar {
+  text-align: center;
   grid-area: sidebar;
   background-color: blue;
   overflow-y: scroll;
