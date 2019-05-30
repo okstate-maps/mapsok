@@ -17,10 +17,11 @@ class App extends Component {
     this.query_url = Config.carto_base_api.replace("{{username}}", Config.carto_user);
     this.state = { "search_results": [], "base_features": [] };
     this.execute_sql = this.execute_sql.bind(this);
+    this.executeSpatialSearch = this.executeSpatialSearch.bind(this);
+
     //this.execute_sql();
     this.initialize_query();
   }
-
 
   initialize_query(){
     let fields = this.carto_table_fields.join(", ");
@@ -28,12 +29,20 @@ class App extends Component {
     console.log(query);
     let that = this;
     let callback = function(response) {
-      
+
       that.setState({"base_features": response.data.features});
+
     }
     this.execute_sql(query, callback);
   }
 
+  executeSpatialSearch(query){
+    console.log("App.executeSpatialSearch");
+    let that = this;
+    this.execute_sql(query, function(response){
+      that.setState({search_results: response.data});
+    });
+  }
 
   execute_sql(query, callback, format){
     
@@ -74,6 +83,8 @@ class App extends Component {
   }
 
   render() {
+    const base_features = this.state.base_features;
+    const search_results = this.state.search_results;
     return (
       <div className="App">
         <header className="App-header">
@@ -81,7 +92,7 @@ class App extends Component {
         </header>
          <Sidebar />
         <section className="App-map">
-          <MapView />  
+          <MapView base_features={base_features} search_results={search_results} executeSpatialSearch={this.executeSpatialSearch} />  
         </section>
       </div>
     );
