@@ -28,7 +28,7 @@ class App extends Component {
     console.log(query);
     let that = this;
     let callback = function(response) {
-      debugger;
+      
       that.setState({"base_features": response.data.features});
     }
     this.execute_sql(query, callback);
@@ -66,7 +66,7 @@ class App extends Component {
         }
       )
         .then(callback)
-        //.then()
+
         .catch(function (error){
           console.log(error);
       })
