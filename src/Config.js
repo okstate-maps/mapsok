@@ -3,6 +3,7 @@ const Config = {
 	"carto_user": "krdyke",
 	"carto_table": "okmaps2",
 	"carto_base_api": "https://{{username}}.carto.com/api/v2/sql",
+	"thumbnail_url": "https://dc.library.okstate.edu/utils/getthumbnail/collection/{{cdm_collection}}/id/{{contentdm_number}}",
 	"carto_base_query": "SELECT {{fields}} FROM {{table_name}}",
 	"carto_table_fields": [
 	  "the_geom",
@@ -10,7 +11,8 @@ const Config = {
 	  "cartodb_id", 
 	  "original_date",
 	  "contentdm_number",
-	  "collection"
+	  "collection",
+	  "cdm_collection"
 	]
 }
 

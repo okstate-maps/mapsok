@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
+import Modal from 'react-modal';
+import axios from 'axios';
+import URLSearchParams from '@ungap/url-search-params' //URLSearchParams polyfill
 import Config from './Config';
 import MapView from './MapView';
 import Sidebar from './Sidebar';
-import axios from 'axios';
-import URLSearchParams from '@ungap/url-search-params' //URLSearchParams polyfill
 import './App.css';
 
 class App extends Component {
@@ -15,9 +16,13 @@ class App extends Component {
     this.carto_table_fields = Config.carto_table_fields;
     this.carto_base_api = Config.carto_base_api;
     this.query_url = Config.carto_base_api.replace("{{username}}", Config.carto_user);
-    this.state = { "search_results": [], "base_features": [] };
+    this.state = { "search_results": [], "base_features": [], "modalIsOpen": false };
     this.execute_sql = this.execute_sql.bind(this);
     this.executeSpatialSearch = this.executeSpatialSearch.bind(this);
+
+    this.openModal = this.openModal.bind(this);
+    this.afterOpenModal = this.afterOpenModal.bind(this);
+    this.closeModal = this.closeModal.bind(this);
 
     //this.execute_sql();
     this.initialize_query();
@@ -40,7 +45,7 @@ class App extends Component {
     console.log("App.executeSpatialSearch");
     let that = this;
     this.execute_sql(query, function(response){
-      that.setState({search_results: response.data});
+      that.setState({search_results: response.data.features});
     });
   }
 
@@ -82,15 +87,50 @@ class App extends Component {
     )
   }
 
+
+  openModal() {
+    this.setState({modalIsOpen: true});
+  }
+
+  afterOpenModal() {
+    // references are now sync'd and can be accessed.
+
+  }
+
+  closeModal() {
+    this.setState({modalIsOpen: false});
+  }
+
+
   render() {
     const base_features = this.state.base_features;
     const search_results = this.state.search_results;
+    const customStyles = {
+    content : {
+      top                   : '50%',
+      left                  : '50%',
+      right                 : 'auto',
+      bottom                : 'auto',
+      marginRight           : '-50%',
+      transform             : 'translate(-50%, -50%)',
+    }
+    };
+
     return (
       <div className="App">
         <header className="App-header">
          <h1>header</h1>
         </header>
-         <Sidebar />
+        <Modal
+          isOpen={this.state.modalIsOpen}
+          onAfterOpen={this.afterOpenModal}
+          onRequestClose={this.closeModal}
+          style={customStyles}
+          contentLabel="Example Modal"
+        >
+        <h1>hi</h1>
+        </Modal>
+         <Sidebar search_results={search_results} openModal={this.openModal} />
         <section className="App-map">
           <MapView base_features={base_features} search_results={search_results} executeSpatialSearch={this.executeSpatialSearch} />  
         </section>

@@ -155,7 +155,8 @@ class MapView extends Component {
   }
 
   onDragEnd() {
-    this.setState({isRectangleShowing: false});
+    let that = this;
+    setTimeout(function(){that.setState({isRectangleShowing: false})}, 1);
     //let rect = this.rectangleRef.current.leafletElement;
     //let map = this.mapRef.current.leafletElement;
     //rect.removeFrom(map);
