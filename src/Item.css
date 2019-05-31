@@ -1,0 +1,55 @@
+.flexlist.item {
+  flex-direction: row;
+  justify-content: space-between;
+  min-width: 350px;
+}
+
+.flexlist.item * {
+  display: flex;
+  align-items: center;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+.item {
+  background-color: white;
+  padding:5px;
+
+  height:120px;
+  max-width:100%;
+}
+
+.item:nth-child(even) {
+  background-color: #eaeaea;
+}
+
+.item:hover {
+  background-color: #ff6600;
+}
+
+.item p {
+  overflow-y: hidden;
+}
+
+.item p, .item div {
+  line-height: 1.2;
+}
+
+
+.thumbnail-background, .thumbnail-background img {
+  
+  }
+
+
+
+@media (max-width: 500px) {
+
+
+  .flexlist.item {
+    height: 130px;
+    width: 160px;
+    flex: 1 0 auto;
+    margin: 15px 10px; 
+    flex-direction: column;
+  }
+
+}
