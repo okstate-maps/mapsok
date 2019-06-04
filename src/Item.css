@@ -4,9 +4,10 @@
   min-width: 350px;
 }
 
-.flexlist.item * {
+.flexlist.item > * {
   display: flex;
   align-items: center;
+  justify-content: center;
   padding-left: 7px;
   padding-right: 7px;
 }
@@ -27,7 +28,7 @@
 }
 
 .item p {
-  overflow-y: hidden;
+  /*overflow-y: hidden;*/
 }
 
 .item p, .item div {
@@ -35,10 +36,25 @@
 }
 
 
-.thumbnail-background, .thumbnail-background img {
+.thumbnail-background {
+    width: 160px;
+    min-width: 160px;
+    height: 120px;
+    white-space: nowrap;
+    text-align: center;
+    position: relative;
   
   }
 
+.feature-thumbnail {
+    vertical-align: middle;
+    max-height: 120px;
+    max-width: 160px;
+}
+
+img {
+  font-size:0;
+}
 
 
 @media (max-width: 500px) {

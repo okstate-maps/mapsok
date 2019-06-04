@@ -115,7 +115,7 @@ class MapView extends Component {
 
   
   componentWillUpdate(){
-    //console.log("MapView WillUpdate");
+    console.log("MapView WillUpdate");
   }
 
   componentDidUpdate(prevProps, prevState){
@@ -166,7 +166,7 @@ class MapView extends Component {
   //creates a half assed hash consisting of a concatenation of all the search results' cartodb_id
   hashSearchResults() {
     let hash = '';
-    let res = this.props.search_results.features;
+    let res = this.props.search_results;
     let vals = res.values();
     for (const val of vals){
       hash = hash + val.properties.cartodb_id.toString();
@@ -188,9 +188,11 @@ class MapView extends Component {
     const isRectangleShowing = this.state.isRectangleShowing;
     const base_features = this.state.base_features;
     const search_results = this.props.search_results;
+    const hover_feature = this.props.hover_feature;
     const { BaseLayer, Overlay } = LayersControl;
     let rectangle;
-    let geojson; 
+    let geojson;
+
 
     if (isRectangleShowing){
       rectangle = <Rectangle 
@@ -201,8 +203,8 @@ class MapView extends Component {
                      bounds={rectangle_bounds}/>
     }
 
-    if ("features" in search_results) { // that is, if search_results contains geojson
-      geojson = <GeoJSON ref={this.geojsonRef} key={this.hashSearchResults()} weight="1" fillOpacity={0.01} data={search_results}></GeoJSON>;
+    if (hover_feature) { // that is, if search_results contains geojson
+      geojson = <GeoJSON ref={this.geojsonRef} key={Math.random().toString()} weight="1" fillOpacity={0.01} data={hover_feature}></GeoJSON>;
     }
 
     return <div className="MapView">
