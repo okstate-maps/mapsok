@@ -2,17 +2,16 @@ import React, { Component } from 'react';
 import Config from './Config';
 import axios from 'axios';
 
-class Sql extends Component {
-  
-  constructor(props, context) {
-    super(props)
-    this.carto_user = Config.carto_user;
-    this.carto_table = Config.carto_table;
-    this.execute_sql = this.execute_sql.bind(this);
+let execute_sql = function (query, callback, format){
+    
+    //just for testing////
+    //query = "SELECT title FROM okmaps2 LIMIT 10";
+    //format = "json";
+    if (!callback) {
+      callback = function(data){console.log(data)}
+    };
+    //////////////////////
 
-   }
-
-  execute_sql(query, callback, format){
     var format_str = '';
     if (format){
         format_str = format;
@@ -20,14 +19,21 @@ class Sql extends Component {
     else {
         format_str = "geojson";
     }
-    return (axios.post(okm.G.QUERY_URL, {
-        data: {
-          format: format_str,
-          q: query
-        },
-        type: "POST",
-      })
+
+    const params = new URLSearchParams();
+    params.append("q", query);
+    params.append("format", format_str);
+
+    return (axios.post(this.query_url, params,
+        {
+          transformRequest: [function(data, headers) { 
+              delete headers.common['Content-Type'];
+              return data; 
+          }]
+        }
+      )
         .then(callback)
+
         .catch(function (error){
           console.log(error);
       })
@@ -35,4 +41,6 @@ class Sql extends Component {
   }
 
 
-  export default Sql;
+
+
+export default execute_sql;

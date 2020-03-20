@@ -110,16 +110,9 @@ class MapView extends Component {
     //console.log("MapView WillUnmount");
   }
 
-  componentWillReceiveProps(nextProps) {
-  }
-
-  
-  componentWillUpdate(){
-    console.log("MapView WillUpdate");
-  }
 
   componentDidUpdate(prevProps, prevState){
-    console.log("MapView DidUpdate");
+    //console.log("MapView DidUpdate");
     // if (this.props.base_features.length !== prevProps.base_features.length) {
     //   let geojson = this.geojsonRef.current.leafletElement;
     //   geojson.addData(this.props.base_features)
@@ -128,7 +121,7 @@ class MapView extends Component {
   }
 
   componentDidMount(prevProps, prevState){
-    console.log("MapView DidMount");
+    //console.log("MapView DidMount");
     //this.assymmetricPad();
     //const map = this.refs.map.leafletElement
   }

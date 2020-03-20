@@ -14,7 +14,6 @@ class Item extends Component {
   }
 
   openModal() {
-    console.log(this.props.featureProps);
   	this.props.openModal("Item", this.props.featureProps);
   }
 
@@ -32,7 +31,6 @@ class Item extends Component {
 
   render() {
   	const thumbnail_url = Config.thumbnail_url;
-  	
     return (
          <div onMouseOver={this.onMouseOver} onMouseOut={this.onMouseOut} className="item flexlist">
           <div><input name="show-footprint" type="checkbox"/></div>
