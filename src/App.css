@@ -4,12 +4,13 @@ html, body, #root, .App {
 
 .App {
   display: grid;
+  position:relative;
   grid-gap: 0;
   grid-template-areas:
      "header header header"
      "sidebar map map";
   grid-template-rows: 60px 1fr;
-  grid-template-columns: minmax(450px, 1fr) 2fr;
+  grid-template-columns: minmax(300px, 500px) 2fr;
   align-items: stretch;
 
 }
@@ -38,25 +39,6 @@ html, body, #root, .App {
 .App-link {
   color: #61dafb;
 }
-
-.ReactModal__Overlay {
-    z-index: 1000;
-}
-
-.Modal-Content {
-    position: absolute;
-    top: 5%;
-    left: 25%;
-    right: 25%;
-    min-width: 500px;
-    bottom: 5%;
-    border: 1px solid rgb(204, 204, 204);
-    background: rgb(255, 255, 255);
-    overflow: auto;
-    border-radius: 4px;
-    outline: none;
-    padding: 20px;
-  }
 
 /*
 Move sidebar to bottom of phone when screen is less than 500px wide

@@ -2,75 +2,119 @@ import React, { Component } from 'react';
 import ReactModal from 'react-modal';
 import CircleLoader from 'react-spinners/CircleLoader';
 import Config from './Config';
-import {iiifConstructManifestUrl, iiifRequestManifest} from './IIIF';
+import { nanoid } from 'nanoid';
+import ShowMoreText from "react-show-more-text";
+import axios from 'axios';
+import * as L from 'leaflet';
+import { MapContainer } from 'react-leaflet';
+import { IIIFLayer, FullscreenControl } from './react-leaflet-iiif';
+import {iiifConstructImageUrl, iiifConstructManifestUrl, 
+        iiifRequestManifest} from './IIIF';
+
+
 import './Item.css';
+import './Modal.css';
 
 ReactModal.setAppElement('#root');
 
-class Modal extends Component {
+
+
+class Modal extends React.PureComponent {
   constructor(props) {
     super(props);
     this.formatContent = this.formatContent.bind(this);
     this.afterOpenModal = this.afterOpenModal.bind(this);
-    this.closeModal = this.closeModal.bind(this);
-    this.state={};
+    this.handleCloseModal = this.handleCloseModal.bind(this);
+    this.ref = React.createRef(null);
+    this.getParent = this.getParent.bind(this);
+    this.state = {content: [], formattedContent: false};
+    
   }
 
-formatContent(modalType, modalContent) {
-    let content;
-    let that = this;
-
-    switch (modalType) {
-      case "Item":
-        let url = iiifConstructManifestUrl(modalContent);
-        let manifestContent = iiifRequestManifest(url)
-          .then(function(response){
-            let metadata = response.data.metadata;
-            content = metadata.map(function(a){
-              return  <div className="metadataKeyValuePair">
-                        <h4>{a.label}</h4>
-                        <p>{a.value}</p>
-                      </div>
-                });
-            that.setState({
-              modalContent: content,
-              modalIsOpen: true,
-              showSpinner: false
-            });
-          })
-        break;
-
-      default:
-        console.log("I need a modalType buddy.");
+  
+  
+  componentDidUpdate(prevProps, prevState){
+    console.log("Modal::componentDidUpdate");
+    if (prevState.content !== this.state.content){
+       this.setState({formattedContent: this.formatContent(this.state.content)});
+       
     }
-    
-    
+  }
+
+
+ formatContent(modalType) {
+  let modalInfo = this.props.modalInfo;
+    let content = <div id='modalContent'>
+
+                    <MapContainer className="modalMap" center={[0,0]} zoom='0' crs={L.CRS.Simple}>
+                      <IIIFLayer url={iiifConstructImageUrl(modalInfo.modalCollectionId, 
+                                              modalInfo.modalCollection)}/>
+                      <FullscreenControl />
+                    </MapContainer>
+
+
+                    <ul className="metadataList">
+                      {this.state.content.map(item => (
+                        <li className="metadataPair" key={nanoid()}>
+                          <span className="metadataLabel">{item.label + ": "}</span>
+                          <ShowMoreText className="metadataValue">{item.value}</ShowMoreText> 
+                        </li>
+                      ))}
+                    </ul>
+                    
+                  </div>;
+    return content;
   }
 
   afterOpenModal() {
+    console.log("Modal::afterOpenModal");
+    let modalInfo = this.props.modalInfo;
+
+    let that = this;
+    
+    let manifest_url = iiifConstructManifestUrl(modalInfo.modalCollectionId,
+      modalInfo.modalCollection);
+    //console.log(manifest_url);
+    
+    iiifRequestManifest(manifest_url).then(
+        function(r) {
+          that.setState({content: r.data.metadata})
+      }
+    );
     // references are now sync'd and can be accessed.
 
+    //this.props.rebuildTooltip(true);
   }
 
-  closeModal() {
-    this.props.toggleModal();
+  getParent() {
+    return document.querySelector('#modalRoot');
   }
+
+  handleCloseModal() {
+    this.setState({content:[], formattedContent: false});
+    this.props.closeModal();
+  } 
 
 
   render() {
-  	const thumbnail_url = Config.thumbnail_url;
-
-  	let content = this.formatContent(this.props.modalType, this.props.modalContent);
+    console.log("Modal::render");
+    const content = this.state.formattedContent;
+  	//let options = this.props.modalOptions || {};
   	return <ReactModal
-          className="Modal-Content"
-          key={this.props.modalContent.contentdm_number}
-          isOpen={this.props.modalIsOpen}
+          id='modalContainer'
+          ref={this.ref}
+          closeTimeoutMS={500}
+          className='Modal-Content'
+          key={'modal'}
+          isOpen={this.props.isOpen}
           onAfterOpen={this.afterOpenModal}
-          onRequestClose={this.toggleModal}
-          contentLabel="Example Modal">
-    	{content}     
+          onRequestClose={this.handleCloseModal}
+          parentSelector={this.getParent}
+          contentLabel='Modal'>
+      <button className="modalCloseButton" onClick={this.handleCloseModal}>X</button>
+      {content}
+
     </ReactModal>
-    
   }
 }
 

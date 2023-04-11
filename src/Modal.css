@@ -1,0 +1,153 @@
+/*
+Modal animations
+*/
+
+@-webkit-keyframes modal-dropin {
+    0% {
+      -webkit-transform: translateY(0);
+      transform: translateY(0);
+      opacity: 0; }
+    1% {
+      -webkit-transform: translateY(-800px);
+      transform: translateY(-800px);
+      opacity: 0; }
+    2% {
+      -webkit-transform: translateY(-800px);
+      transform: translateY(-800px);
+      opacity: 1; }
+    100% {
+      -webkit-transform: translateY(0);
+      transform: translateY(0);
+      opacity: 1; } }
+  
+  @keyframes modal-dropin {
+    0% {
+      -webkit-transform: translateY(0);
+      transform: translateY(0);
+      opacity: 0; }
+    1% {
+      -webkit-transform: translateY(-800px);
+      transform: translateY(-800px);
+      opacity: 0; }
+    2% {
+      -webkit-transform: translateY(-800px);
+      transform: translateY(-800px);
+      opacity: 1; }
+    100% {
+      -webkit-transform: translateY(0);
+      transform: translateY(0);
+      opacity: 1; } }
+  
+  @-webkit-keyframes modal-dropout {
+    0% {
+      -webkit-transform: translateY(0);
+      transform: translateY(0); }
+    100% {
+      -webkit-transform: translateY(-800px);
+      transform: translateY(-800px); } }
+  
+  @keyframes modal-dropout {
+    0% {
+      -webkit-transform: translateY(0);
+      transform: translateY(0); }
+    100% {
+      -webkit-transform: translateY(-800px);
+      transform: translateY(-800px); } }
+  
+  div.ReactModalPortal div.Modal-Content.ReactModal__Content--before-close {
+    -webkit-animation: modal-dropout .4s;
+    animation: modal-dropout .4s; 
+  }
+  
+  div.ReactModalPortal div.Modal-Content {
+    -webkit-animation: modal-dropin .4s;
+    animation: modal-dropin .4s; 
+  }
+     
+  div.ReactModal__Overlay {
+      opacity: 0;
+      transition: opacity 200ms linear;
+  }
+  
+  div.ReactModal__Overlay--after-open{
+      opacity: 1;
+  }
+  
+  div.ReactModal__Overlay--before-close{
+      opacity: 0;
+  }
+  
+  /*
+  End animations section
+  */
+  .modalMap {
+    width:90%;
+    height:2000px;
+    max-height: 50vh;
+    
+    position:relative;
+    }
+  
+  .ReactModalPortal div {
+      z-index: 10000;
+  }
+  
+  
+.ReactModal__Overlay {
+  z-index: 1000;
+}
+
+/* .Modal-Content {
+  position: absolute;
+  top: 5%;
+  left: 25%;
+  right: 25%;
+  min-width: 200px;
+  bottom: 5%;
+  border: 1px solid rgb(204, 204, 204);
+  background: rgb(255, 255, 255);
+  overflow: auto;
+  border-radius: 4px;
+  outline: none;
+  padding: 20px;
+} */
+
+  .ReactModalPortal .Modal-Content {
+      position: relative;
+      top: 0;
+      margin: 0 auto;
+      max-width:1000px;
+      width: 90%;
+      max-height:90%;
+      bottom: 5%;
+      border: 1px solid rgb(204, 204, 204);
+      background: rgb(255, 255, 255);
+      overflow: auto;
+      border-radius: 4px;
+      outline: none;
+      padding: 20px;
+    }
+  
+  button.modalCloseButton {
+    position: absolute;
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    top: 5px;
+    right: 5px;
+  }
+
+  button.modalCloseButton:hover {
+    background-color: rgb(242, 242, 242);
+  }
+
+  ul.metadataList {
+    list-style-type: none;
+  }
+  li.metadataPair {
+    margin: 7px;
+  }
+
+  span.metadataLabel {
+    font-weight: bold;
+  }
