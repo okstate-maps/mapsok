@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/mapsok/static/css/main.16afa24d.css",
+    "main.js": "/mapsok/static/js/main.d186baf9.js",
+    "static/media/icon-fullscreen.svg": "/mapsok/static/media/icon-fullscreen.a8f4a7de091d4a05f2de.svg",
+    "index.html": "/mapsok/index.html",
+    "main.16afa24d.css.map": "/mapsok/static/css/main.16afa24d.css.map",
+    "main.d186baf9.js.map": "/mapsok/static/js/main.d186baf9.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.16afa24d.css",
+    "static/js/main.d186baf9.js"
+  ]
+}
