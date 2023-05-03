@@ -118,14 +118,16 @@ class MapView extends Component {
     this.rectangleRef = createRef();
     this.geojsonRef = createRef();
 
-    this.mapboxToken = Config.mapboxToken;
-    this.mapboxStyles = "https://api.mapbox.com/styles/v1";
-    this.mapboxStreets = `${this.mapboxStyles}/krdyke/cjt1zbtwh1ctg1fo1l2nmkhqh/tiles/256/{z}/{x}/{y}${this.retina}?access_token=${this.mapboxToken}`;
-    this.mapboxSatellite = `${this.mapboxStyles}/mapbox/satellite-streets-v10/tiles/{z}/{x}/{y}${this.retina}?access_token=${this.mapboxToken}`;
-    this.mapboxOKCounties = `${this.mapboxStyles}/krdyke/cj7rus41ceagg2rny2tgglav3/tiles/256/{z}/{x}/{y}${this.retina}?access_token=${this.mapboxToken}`;
+    //this.mapboxToken = Config.mapboxToken;
+    //this.mapboxStyles = "https://api.mapbox.com/styles/v1";
+    // this.mapboxStreets = `${this.mapboxStyles}/krdyke/cjt1zbtwh1ctg1fo1l2nmkhqh/tiles/256/{z}/{x}/{y}${this.retina}?access_token=${this.mapboxToken}`;
+    // this.mapboxSatellite = `${this.mapboxStyles}/mapbox/satellite-streets-v10/tiles/{z}/{x}/{y}${this.retina}?access_token=${this.mapboxToken}`;
+    // this.mapboxOKCounties = `${this.mapboxStyles}/krdyke/cj7rus41ceagg2rny2tgglav3/tiles/256/{z}/{x}/{y}${this.retina}?access_token=${this.mapboxToken}`;
+    
+    this.ok_counties = "https://vectortileservices1.arcgis.com/jWQlP64OuwDh6GGX/arcgis/rest/services/ok_counties_v/VectorTileServer";
 
     //plss
-    this.esri_plss = "https://tiles{s}.arcgis.com/tiles/jWQlP64OuwDh6GGX/arcgis/rest/services/OK_TownshipRange/MapServer/WMTS";
+    this.esri_plss = "https://gis.blm.gov/arcgis/rest/services/Cadastral/BLM_Natl_PLSS_CadNSDI/MapServer";
    }
 
  
@@ -442,10 +444,10 @@ class MapView extends Component {
                     <VectorBasemapLayer apikey={Config.arcgisAPIkey} name="ArcGIS:Imagery" />                    
                   </LayersControl.BaseLayer>
                   <LayersControl.Overlay name="OK Counties">
-                      <VectorTileLayer apikey={Config.arcgisAPIkey} url="https://vectortileservices1.arcgis.com/jWQlP64OuwDh6GGX/arcgis/rest/services/ok_counties_v/VectorTileServer"/>
+                      <VectorTileLayer apikey={Config.arcgisAPIkey} url={this.ok_counties}/>
                   </LayersControl.Overlay>
                   <LayersControl.Overlay name="PLSS">
-                    <DynamicMapLayer url="https://gis.blm.gov/arcgis/rest/services/Cadastral/BLM_Natl_PLSS_CadNSDI/MapServer"/>
+                    <DynamicMapLayer url={this.esri_plss}/>
                   </LayersControl.Overlay>
                 </LayersControl>
 
