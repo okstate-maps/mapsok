@@ -3,13 +3,15 @@ import _ from 'lodash';
 import { nanoid } from 'nanoid';
 import * as Wkt from 'wicket';
 import axios from 'axios';
+import { ResizableBox } from 'react-resizable';
+
 import Config from './Config';
 import { Item, PinnedItem } from './Item';
 import { findWithAttr } from './Util';
 import './Sidebar.css';
 
 class Sidebar extends Component {
-  static whyDidYouRender = false;
+  //static whyDidYouRender = false;
 
   constructor(props) {
     super(props);
@@ -51,8 +53,8 @@ class Sidebar extends Component {
   }
 
   handleItemPinning(item) {
-    console.log(item);
-    console.log(this);
+    console.log("Sidebar::handlePinning: ", item);
+    //console.log(this);
     this.setState({"pinningChange": true});
     this.props.handleItemPinning(item);
   }
@@ -149,9 +151,28 @@ class Sidebar extends Component {
 
   onScroll(){
     let elem = this.sidebarRef.current;
-    if (Math.abs(elem.scrollHeight - elem.clientHeight - elem.scrollTop) <= 1) {
-      this.setState({search_page: this.state.search_page + 1});
+    if (document.body.clientWidth >= 600){
+      if (Math.abs(elem.scrollHeight - elem.clientHeight - elem.scrollTop) <= 1) {
+        this.setState({search_page: this.state.search_page + 1});
+      }
     }  
+  }
+
+  onWheel(e){
+   if (document.body.clientWidth < 600){
+
+    
+    let elem  = e.target,
+        scrollUnit = 50,
+
+        // deltaMode indicates if the deltaY value is pixels or lines (0 for pixels, 1 for lines, 2 for page)
+        deltaMode = e.deltaMode,
+
+        //if the deltamode is anything but pixels (0), use scroll unit to calculate scroll amount
+        scrollSize = deltaMode === (1 || 2) ? e.deltaY * scrollUnit: e.deltaY;
+
+    elem.scrollLeft = elem.scrollLeft + scrollSize;
+   }
   }
 
   render() {
@@ -170,7 +191,6 @@ class Sidebar extends Component {
     
     return (
         <section className="Sidebar">
-          
             <div className="Sidebar-controls">
               <input type='search' 
                   name="textsearch"
@@ -197,7 +217,8 @@ class Sidebar extends Component {
                       />
                     )}
             </div>
-            <div onScroll={this.onScroll} 
+            <div onWheel={this.onWheel}
+              onScroll={this.onScroll} 
                 ref={this.sidebarRef} 
                 className="Sidebar-search-results flexlist">
                   {display_results.length === 0 && 
@@ -220,6 +241,7 @@ class Sidebar extends Component {
                   />
                 )}
             </div>
+     
        </section>
 
     );

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet-iiif';
+import { Vault } from '@iiif/vault';
 import Config from './Config';
 import { LeafletConsumer } from 'react-leaflet';
 
@@ -25,7 +26,8 @@ export function iiifConstructImageUrl (contentdm_number, cdm_collection) {
 }
 
 export function iiifRequestManifest (url){
-    return axios.get(url);
+  const vault = new Vault();
+  return vault.loadManifest(url);
 }
 
 export default iiifConstructManifestUrl;

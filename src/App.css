@@ -15,11 +15,6 @@ html, body, #root, .App {
 
 }
 
-.flexlist {
-  display: flex;
-  flex-direction: column;
-}
-
 .App-header {
   text-align: center;
   grid-area: header;
@@ -59,10 +54,7 @@ Move sidebar to bottom of phone when screen is less than 500px wide
     line-height: 12px;
   }
 
-  .flexlist {
-    display: flex;
-    flex-direction: row;
-  }
+  
 
   .App-sidebar h1 {
     display: none;
@@ -75,13 +67,8 @@ Move sidebar to bottom of phone when screen is less than 500px wide
 
   }
 
-
-  .flexlist .item {
-    height: 13  0px;
-    width: 160px;
-    flex: 1 0 auto;
-    margin: 15px 10px;
-    
+  .Sidebar h1 {
+    display: none;
   }
 }
 

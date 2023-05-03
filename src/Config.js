@@ -8,8 +8,8 @@ const Config = {
 	"fieldinfo_url": "https://dc.library.okstate.edu/digital/bl/dmwebservices/index.php?q=dmGetCollectionFieldInfo/{{cdm_collection}}/json",
 	"image_url": "https://dc.library.okstate.edu/iiif/2/{{cdm_collection}}:{{contentdm_number}}/info.json",
 	"manifest_url": "https://dc.library.okstate.edu/iiif/2/{{cdm_collection}}:{{contentdm_number}}/manifest.json",
-	"thumbnail_url": "https://dc.library.okstate.edu/iiif/2/{{cdm_collection}}:{{contentdm_number}}/full/!160,120/0/default.jpg",
-
+	"thumbnail_url": "https://dc.library.okstate.edu/iiif/2/{{cdm_collection}}:{{contentdm_number}}/full/!150,110/0/default.jpg",
+	"debug_mode": false,
 	"carto_base_query": "SELECT {{fields}} FROM {{table_name}}",
 	"carto_table_fields": [
 	  "the_geom",

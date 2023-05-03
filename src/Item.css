@@ -2,9 +2,6 @@
   flex-direction: row;
   min-width: 300px;
   max-width: 500px;
-}
-
-.flexlist.item {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -34,11 +31,18 @@ div.modal-trigger-wrapper > p {
   max-width:150px;
 }
 
+button.item, 
+button.item:active,
+button.item:focus-visible {
+  border: none;
+}
+
+ 
 .item {
   background-color: white;
   padding:5px;
 
-  height:120px;
+  height:125px;
   max-width:100%;
   transition: background-color 0.2s linear;
 }
@@ -64,9 +68,9 @@ div.modal-trigger-wrapper > p {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 160px;
-    min-width: 160px;
-    height: 120px;
+    width: 150px;
+    min-width: 150px;
+    height: 115px;
     white-space: nowrap;
     text-align: center;
     position: relative;
@@ -75,8 +79,8 @@ div.modal-trigger-wrapper > p {
 
 .feature-thumbnail {
     vertical-align: middle;
-    max-height: 120px;
-    max-width: 160px;
+    max-height: 110px;
+    max-width: 150px;
 }
 
 img {
@@ -84,15 +88,65 @@ img {
 }
 
 
-@media (max-width: 500px) {
+.item p.item-title-long {
+  display: block;
+}
+
+.item p.item-title-short {
+  display: none;
+}
 
 
+@media (max-width: 600px) {
+
+
+  .item p.item-title-long {
+    display: none;
+  }
+  
+  .item p.item-title-short {
+    display: block;
+  }
+  .pin-item-wrapper {
+    display:none;
+  }
+
+  .item p {
+    font-size: 12px;
+  }
   .flexlist.item {
-    height: 140px;
-    width: 180px;
+    height: 150px;
+    min-width: 100px;
     flex: 1 0 auto;
-    margin: 15px 10px; 
+    margin: 5px 10px; 
     flex-direction: column;
   }
+  .flexlist.item p {
+    margin: 5px;
+  }
+  div.modal-trigger-wrapper {
+    flex-direction: column;
+  }
+
+
+  .thumbnail-background {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    min-width: 40px; 
+    height: 80px; 
+    white-space: nowrap;
+    text-align: center;
+    position: relative;
+  
+  }
+
+.feature-thumbnail {
+    vertical-align: middle;
+    max-height: 80px;
+    max-width: 100px;
+}
+
 
 }

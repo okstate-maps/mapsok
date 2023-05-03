@@ -61,20 +61,28 @@ span.try-searching-text {
 
 }
 /*
-Move sidebar to bottom of phone when screen is less than 500px wide
+Move sidebar to bottom of screen when screen is less than 500px wide
 */
 
-@media (max-width: 500px) {
+@media (max-width: 600px) {
+
+  .Sidebar-controls {
+    height: 30px;
+  }
+  /* .flexlist .item {
+    height: 130px;
+    width: 160px;
+    flex: 1 0 auto;
+    margin: 15px 10px;
+    
+  }  */
+  
 
   .flexlist {
     display: flex;
     flex-direction: row;
     height:auto;
     overflow: auto;
-  }
-
-  .Sidebar h1 {
-    display: none;
   }
 
 }

@@ -1,4 +1,4 @@
-import React, { createRef, Component } from 'react';
+import React, { createRef, Component, lazy } from 'react';
 import Config from './Config';
 import axios from 'axios';
 import L from 'leaflet'; //
@@ -17,8 +17,18 @@ import {
 import VectorBasemapLayer from 'react-esri-leaflet/plugins/VectorBasemapLayer';
 import VectorTileLayer from 'react-esri-leaflet/plugins/VectorTileLayer';
 
-import * as turf from '@turf/turf';
-import * as geojsonFile from './data.json';
+// all turf imports (rather than importing the whole deal)
+import bboxPolygon from '@turf/bbox-polygon';
+import { featureEach } from '@turf/meta';
+import center from '@turf/center';
+import intersect from '@turf/intersect';
+import booleanIntersects from '@turf/boolean-intersects';
+import distance from '@turf/distance';
+import area from '@turf/area';
+
+//import * as geojsonFile from './data.json';
+
+
 
 //import * as geojsonFile from './okmaps2_jq4.geojson';
 //import * as geojsonFile from './okmaps2.geojson';
@@ -66,7 +76,7 @@ class MapView extends Component {
 
     this.state = {isRectangleShowing: false,
                   geojsonStuff: false,
-                  geojsonFile: geojsonFile}
+                  geojsonFile: false}
     
     const DEFAULT_BOUNDS = [
         [
@@ -90,7 +100,6 @@ class MapView extends Component {
     this.bboxStringToPolygon = this.bboxStringToPolygon.bind(this);
     this.assymmetricPad = this.assymmetricPad.bind(this);
     this.updateRectangleBounds = this.updateRectangleBounds.bind(this);
-    this.hashSearchResults = this.hashSearchResults.bind(this);
     this.toggleRectangleVis = this.toggleRectangleVis.bind(this);
     this.rectangleStyleColor = "#8e8e8e";
     this.rectangleStyleWeight = 1;
@@ -99,7 +108,7 @@ class MapView extends Component {
     // this.onDrag = this.onDrag.bind(this);
     // this.onDragStart = this.onDragStart.bind(this);
     // this.onDragEnd = this.onDragEnd.bind(this);
-    // this.onMoveEnd = this.onMoveEnd.bind(this);
+    //this.onMoveEnd = this.onMoveEnd.bind(this);
     // this.onZoomStart = this.onZoomStart.bind(this);
     // this.onZoomEnd = this.onZoomEnd.bind(this);
     
@@ -136,7 +145,7 @@ class MapView extends Component {
   bboxStringToPolygon(bbox_str){
     let a = bbox_str.split(",");
     let bbox_array = [a[0],a[1], a[2],a[3]];
-    return turf.bboxPolygon(bbox_array);
+    return bboxPolygon(bbox_array);
   }
 
 
@@ -174,8 +183,10 @@ class MapView extends Component {
     //this.assymmetricPad();
     //const map = this.refs.map.leafletElement
     console.log(this.state.geojsonFile);
+    import("./data_mcc_okmaps.json").then((data) =>{
+      this.setState({geojsonStuff: data});
+    }) 
 
-    this.setState({geojsonStuff: this.state.geojsonFile.default});
     // axios.get(this.state.geojsonFile.default)
     //   .then(resp => {
     //     console.log(resp);
@@ -228,92 +239,71 @@ class MapView extends Component {
 
   }
 
-  //creates a half assed hash consisting of a concatenation of all the search results' cartodb_id
-  hashSearchResults() {
-    let hash = '';
-    let res = this.props.search_results;
-    let vals = res.values();
-    for (const val of vals){
-      hash = hash + val.properties.cartodb_id.toString();
-    }
-    return hash
-  }
-
   onMoveEnd(rectangle_bounds, geojsonStuff) {
-    let bbox_str = new L.LatLngBounds(rectangle_bounds).toBBoxString();
-    let bbox_wkt = this.bboxStringToWKT(bbox_str);
-    let bbox_polygon = this.bboxStringToPolygon(bbox_str);
     //console.log("bbox_polygon", bbox_polygon);
-    let bbox_area = turf.area(bbox_polygon);
+    let bbox_str = new L.LatLngBounds(rectangle_bounds).toBBoxString();
+    let bbox_polygon = this.bboxStringToPolygon(bbox_str);
     let bboxes = geojsonStuff;
     let bboxes_with_ratios = [];
-    let smaller_matches=[];
-    let bigger_matches=[];
-    let areas = [];
-    turf.featureEach(bboxes, function (feat, index){
-      let feat_area;
-      let feat_cat;
-      if (bbox_polygon && turf.booleanIntersects(bbox_polygon, feat)) {
-          let intersection= turf.intersect(bbox_polygon, feat);
-          let intersection_area, union_area;
+    
+    
+    let startTime = performance.now();
+    featureEach(bboxes, function (feat, index){
+      let sim_score, sim_score2;
+      let intersection_area, union_area, feat_area, feat_center, bbox_area;
+      let bbox_center = center(bbox_polygon);
+
+      if (bbox_polygon && booleanIntersects(bbox_polygon, feat)) {
+          let intersection= intersect(bbox_polygon, feat);
+          feat_center = center(feat);
+          let center_distance = distance(bbox_center, feat_center);
+
           if (intersection){
-            intersection_area = turf.area(intersection);
-          
-          }
-          let union = turf.union(bbox_polygon,feat);
-          if (union) {
-            union_area = turf.area(union);
+            intersection_area = area(intersection) - center_distance; //subtract distance between centers
+            feat_area = area(feat);
+            bbox_area = area(bbox_polygon);
           }
           
+        sim_score = 2 * intersection_area / (feat_area + bbox_area);
+        if (Config.debug_mode){
+          feat.properties.sim_score = sim_score
+        }
+      }
+      else {
+        sim_score = 0;
+      }
 
-        //feat_area = Math.sqrt(Math.abs(difference_area - intersection_area));
-        feat_area = intersection_area/union_area;
-
-
-       }
-//       }
-
-      if (feat_area) {
+      if (Config.debug_mode){
+        console.log("sim_score: ", sim_score);
+      }
+      //console.log(feat.properties);
+      if (sim_score) {
+        let id = feat.properties.Identifier ? feat.properties.Identifier : feat.properties["File Name"];
+        //console.log(id);
         bboxes_with_ratios.push(
           {
-            "similarityScore":feat_area,
-            "simCat": feat_cat,
+            "similarityScore":sim_score,
+           // "similarityScore2":sim_score2,
             "properties": feat.properties,
             "geometry": feat.geometry,
             "isPinned": false,
             "key": nanoid(),
-            "id": feat.properties.Identifier
+            "id": id
           }
         );
-        //areas.push(((feat_area/bbox_area)+(bbox_area/feat_area))/bbox_area);
-        //areas.push(feat_area);
+
       
       } 
-    });
+    });  
+
+    console.log("Query time:", performance.now() - startTime);
     bboxes_with_ratios = bboxes_with_ratios.sort((a,b) => {
       return b.similarityScore - a.similarityScore;
     });
-    //console.log(bboxes_with_ratios);
-    //areas = areas.sort();
-    //let normalized_areas = [];
-    //console.log(areas);
-    // let min_x = Math.sqrt(min(areas));
-    // console.log("min_x: ", min_x);
-    // let max_x = Math.sqrt(max(areas));
-    // console.log("max_x: ", max_x);
-    
-    //areas.forEach(val => {
-      //normalized_areas.push((Math.sqrt(val) - min_x)/(max_x - min_x));
-      //normalized_areas.push()
-    //})
 
-    //normalized_areas.sort();
-    //console.log(normalized_areas);
-
-    
-    //console.log("Smaller: ", smaller_matches.length);      
-    //console.log("bigger: ", bigger_matches.length);    
-    //let query = buildFilterRankQuery(Config.carto_table, bbox_wkt, this.PER_PAGE, this.OFFSET, Config.carto_table_fields.join(", "));
+    if (Config.debug_mode){
+      window.debug_boxes = geojsonStuff;
+    }
     this.executeSpatialSearch(false, bboxes_with_ratios);
     
   }
@@ -332,6 +322,51 @@ class MapView extends Component {
     let rectangle;
     let geojson;
     let pinned_geojson;
+    let debug_boxes;
+
+    if (Config.debug_mode){
+      debug_boxes = <GeoJSON
+          key={nanoid()}
+          style={function(f){
+
+            if (f.properties.sim_score == 0){
+              return {color:"blue", weight: "0.25"}
+            }
+              if (f.properties.sim_score <= 0.2){
+                return {color:"#fef0d9", weight: "0.25"}
+              }
+              else if (f.properties.sim_score <= 0.4){
+                return {color:"#fdcc8a", weight: "0.5"}
+              }
+              else if (f.properties.sim_score <= 0.6){
+                return {color:"#fc8d59", weight: "0.75"}
+              }
+              else if (f.properties.sim_score <= 0.8){
+                return {color:"#e34a33", weight: "1.0"}
+              }
+              else if (f.properties.sim_score <= 1){
+                
+                return {color:"#b30000", weight: "1.5"}
+              }
+              else {
+                return {color:"#b30000", weight: "1.5"}
+                
+              }
+            } 
+          }
+          fillOpacity={0}
+          fillColor="red" 
+          data={window.debug_boxes}
+          eventHandlers={{
+        click: (e) => {
+          //console.log();
+          openModal(e.sourceTarget.feature.properties);
+        },
+      }}
+     >
+        
+    </GeoJSON>;
+    }
 
 
     if (isRectangleShowing){
@@ -366,7 +401,7 @@ class MapView extends Component {
                           eventHandlers={{
                             click: (e) => {
                               //console.log();
-                              openModal("Item", e.sourceTarget.feature.properties);
+                              openModal(e.sourceTarget.feature.properties);
                             },
                           }}
                          >
@@ -414,6 +449,7 @@ class MapView extends Component {
                   </LayersControl.Overlay>
                 </LayersControl>
 
+                {debug_boxes}
                 {rectangle}
                 {pinned_geojson}
                 {geojson}

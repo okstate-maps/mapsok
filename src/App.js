@@ -1,31 +1,20 @@
-import React, { Component, PureComponent } from 'react';
-
-import axios from 'axios';
-import URLSearchParams from '@ungap/url-search-params'; //URLSearchParams polyfill
+import React, { PureComponent } from 'react';
 import {css, jsx} from '@emotion/react';
 import BounceLoader from 'react-spinners/BounceLoader';
-import { requestFieldInfo, constructFieldInfoRequestUrl } from './FieldInfo';
+import { requestFieldInfo, 
+         constructFieldInfoRequestUrl } from './FieldInfo';
 import Modal from './Modal';
 import Config from './Config';
 import MapView from './MapView';
 import Sidebar from './Sidebar';
-import execute_sql from './Sql';
 import {findWithAttr} from './Util';
-
-
 import './App.css';
 
 
 class App extends PureComponent {
-  static whyDidYouRender = true;
+  //static whyDidYouRender = true;
   constructor(props) {
     super(props);
-    //DELETE//axios.defaults.headers.post['Content-Type'] = 'application/json';
-    //DELETE this.carto_user = Config.carto_user;
-    //DELETEthis.carto_table = Config.carto_table;
-    //DELETEthis.carto_table_fields = Config.carto_table_fields;
-    //DELETEthis.carto_base_api = Config.carto_base_api;
-    //DELETEthis.query_url = Config.carto_base_api.replace("{{username}}", Config.carto_user);
     this.spinner_css = css`{
       position:absolute;
       top:50%;
@@ -39,10 +28,8 @@ class App extends PureComponent {
                    "modalType": "Item",
                    "hover_feature": false,
                    "showSpinner": false,
-                  "collection_field_info": {}
-                
-    };
-    //DELETEthis.execute_sql = execute_sql.bind(this);
+                  "collection_field_info": {} 
+                 };
     this.executeSpatialSearch = this.executeSpatialSearch.bind(this);
     this.updateSearchResults = this.updateSearchResults.bind(this);
 
@@ -54,16 +41,13 @@ class App extends PureComponent {
     this.toggleModal = this.toggleModal.bind(this);
     this.toggleSpinner = this.toggleSpinner.bind(this);
     this.handleItemPinning = this.handleItemPinning.bind(this);
-
   }
 
 
-  openModal(modalType, modalContent){
+  openModal(modalContent){
     console.log("App::openModal");
     this.setState({
-      modalInfo: {modalType: modalType,
-                  modalContent: modalContent,
-                  modalId: modalContent.Identifier,
+      modalInfo: {
                   modalCollection: modalContent["Reference URL"].split("/")[6],
                   modalCollectionId: modalContent["Reference URL"].split("/")[8]
                 }
@@ -87,14 +71,6 @@ class App extends PureComponent {
 
   executeSpatialSearch(query, results){
     console.log("App::executeSpatialSearch");
-    //DELETE   // if (query){
-    //DELETE//   this.setState({showSpinner: true});
-    
-    //   let that = this;
-    //   this.execute_sql(query, function(response){
-    //     that.setState({search_results: response.data.features});
-    //   });
-    // }
 
     if (results) {
       this.setState({showSpinner: true});
@@ -108,36 +84,31 @@ class App extends PureComponent {
     if (featureGeom !== this.state.hover_feature){
       this.setState({hover_feature: featureGeom});
     }
-        }  
+  }  
 
   onItemMouseOut() {
     this.setState({hover_feature: false});
   }
 
-
-
   componentDidUpdate(prevProps, prevState){
     //console.log("App DidUpdate");
-    console.log("componentDidUpdate: ", prevState);
+    //console.log("componentDidUpdate: ", prevState);
   }
 
   componentDidMount(prevProps, prevState){
-    //console.log("App DidMount");
-    //this.executeSpatialSearch();
+    console.log("App::DidMount");
     let colls = Config.collections;
     let that = this;
     colls.forEach((v, i) => {
       var u = constructFieldInfoRequestUrl(v);
       requestFieldInfo(u).then(
         (r) => {
-          //console.log("requestFieldInfo:", r);
           let current_collection_info = that.state.collection_field_info;
           current_collection_info[v] = r.data
           that.setState({collection_field_info: current_collection_info});
         } 
       )
     });
-    //constructFieldInfoRequestUrl
   }
 
   handleItemPinning(item){
