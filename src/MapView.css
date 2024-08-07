@@ -1,3 +1,8 @@
 .MapView, .map {
 	height: 100%;
 }
+
+div.toggle-search-control {
+	background-color: white;
+	padding:2px;
+}

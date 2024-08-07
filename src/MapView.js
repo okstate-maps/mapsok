@@ -1,82 +1,164 @@
-import React, { createRef, Component, lazy } from 'react';
+import React, { createRef, Component, useState, 
+                createContext, useContext, useRef, 
+                useEffect, useCallback, memo } from 'react';
 import Config from './Config';
 import axios from 'axios';
 import L from 'leaflet'; //
+import './leaflet.css';
+import './leaflet.draw.css';
+
 import {
   MapContainer, 
   LayersControl,
   GeoJSON,
   Rectangle,
+  FeatureGroup,
   Popup,
   useMap,
   useMapEvents
 } from 'react-leaflet';
-import {
-  DynamicMapLayer
-} from 'react-esri-leaflet';
+import { EditControl } from 'react-leaflet-draw';
+import Control from './Control.tsx';
+import { DynamicMapLayer } from 'react-esri-leaflet';
 import VectorBasemapLayer from 'react-esri-leaflet/plugins/VectorBasemapLayer';
 import VectorTileLayer from 'react-esri-leaflet/plugins/VectorTileLayer';
-
-// all turf imports (rather than importing the whole deal)
-import bboxPolygon from '@turf/bbox-polygon';
-import { featureEach } from '@turf/meta';
-import center from '@turf/center';
-import intersect from '@turf/intersect';
-import booleanIntersects from '@turf/boolean-intersects';
-import distance from '@turf/distance';
-import area from '@turf/area';
-
-//import * as geojsonFile from './data.json';
-
-
-
-//import * as geojsonFile from './okmaps2_jq4.geojson';
-//import * as geojsonFile from './okmaps2.geojson';
-
-import {FilterRankQuery as buildFilterRankQuery} from './FilterRankQuery'; //use alias just to be a little more clear I guess
-
 import './MapView.css';
+import { GeojsonContext, SearchContext } from './Contexts';
+import MapSearch from './MapSearch';
 import { nanoid } from 'nanoid';
+import _ from 'lodash';
 
 
 //const { Map, TileLayer, Marker, Popup } = ReactLeaflet
 const templater = function(strings, ...keys) {}
 
+const DrawComponent = memo(function DrawComponent(props) {
+  const map = useMap();
+
+  const context = useContext(GeojsonContext);
+  //console.log("DrawComponent::GeojsonContext", geojson);
+  
+  const [enabled, setEnabled] = useState(true);
+  //const [geojson, setGeojson] = useState(props.geojsonStuff);
+  //console.log(props.geojsonStuff);
+
+  let drawOptions;
+  if (enabled) {
+    drawOptions = {
+      polyline: false,
+      circle: false,
+      marker: false,
+      circlemarker: false,
+      polygon:false,
+      rectangle: {
+          shapeOptions: {
+            clickable: false,
+            color: '#8e8e8e'
+          }
+      }
+    }
+  }
+  else {
+    drawOptions = {
+        polyline: false,
+        circle: false,
+        marker: false,
+        circlemarker: false,
+        polygon:false,
+        rectangle: false
+      }
+  }
+
+  function onCreated(rect){
+    context.toggleDrawnSearch(true);
+    context.onMoveEnd(rect.layer._bounds, context.geojsonState);
+    setEnabled(false);
+  }
+
+  function onDeleted(rect){
+    context.toggleDrawnSearch(false);
+    setEnabled(true);
+  }
+
+  let feature_group =  <FeatureGroup>
+      <EditControl
+        position='topright'
+        //onEdited={console.log("onEdited")}
+        onCreated={onCreated}
+        onDeleted={onDeleted}
+        draw={drawOptions}
+      />
+    </FeatureGroup>
+
+  return feature_group
+   
+});
+
+
 function MapEvents(props) {
   const map = useMap();
+  const context = useContext(GeojsonContext);
+  const searchContext = useContext(SearchContext);
+  //console.log("MapEvents::GeojsonContext", context);
+  //console.log("MapEvents::SearchContext", searchContext);
   
-
   const mapEvents = useMapEvents({
     drag: () => {
-      let b = props.assymmetricPad(map.getBounds());
-      props.updateRectangleBounds(b);
+      if (context.drawnSearchBox === true) {return} 
+      let b = context.assymmetricPad(map.getBounds());
+      context.useRectangleBounds(b);
     },
     dragstart: () => {
+      if (context.drawnSearchBox === true) {return} 
       console.log("drag start");
-      props.toggleRectangleVis(true);
+      context.toggleRectangleVis(true);
     },
     dragend: () => {
+      if (context.drawnSearchBox === true) {return} 
       console.log("drag end");
-      props.toggleRectangleVis(false);
+      context.toggleRectangleVis(false);
     },
     moveend: () => {
+      if (context.drawnSearchBox === true) {return} 
       console.log("move end");
-      props.onMoveEnd(props.assymmetricPad(map.getBounds()), props.geojsonStuff);
+      context.onMoveEnd(context.assymmetricPad(map.getBounds()), context.geojsonState);
+      //searchContext.resetSidebar();
+      //console.log(searchContext);
     }
   })
   return null
 }
 
-class MapView extends Component {
-  
-  constructor(props, context) {
-    super(props)
-    this.OFFSET = 0;
-    this.PER_PAGE = 10;
 
-    this.state = {isRectangleShowing: false,
-                  geojsonStuff: false,
-                  geojsonFile: false}
+
+function ToggleSearchControl({toggleRedoSearchOnMapMove}){
+  //debugger;
+  const onChange = (e) => {
+    let bool = e.target.checked;
+    toggleRedoSearchOnMapMove(bool);
+  };
+  
+  return <label><input onChange={onChange} defaultChecked={true} type="checkbox"></input>Redo search when map moves</label>;
+}
+function MapView(props) {
+  
+    //super(props)
+    //this.OFFSET = 0;
+   // const OFFSET = 0;
+
+    //this.PER_PAGE = 10;
+    //const PER_PAGE = 10;
+
+    const [redoSearchOnMapMove, setRedoSearchOnMapMove] = useState(true);
+    const [isRectangleShowing, setIsRectangleShowing] = useState(false);
+    const [drawnSearchBox, setDrawnSearchBox] = useState(false);
+    //const [geojsonState, setGeojson] = useState({geojson});
+    //const [isRectangleShowing, setIsRectangleShowing] = useState(false);
+    
+    // this.state = {isRectangleShowing: false,
+    //               drawnSearchBox: false,
+    //               geojsonStuff: false,
+    //               geojsonFile: false}
     
     const DEFAULT_BOUNDS = [
         [
@@ -88,70 +170,67 @@ class MapView extends Component {
           "37.49016029761671"
         ]
       ];
-    this.rectangle_bounds = DEFAULT_BOUNDS;
+
+    const rectangle_bounds = DEFAULT_BOUNDS;
     const DEFAULT_VIEWPORT = {
       center: [36.1156, -97.0584],
       zoom: 13
     }
-    this.viewport = DEFAULT_VIEWPORT;
-    this.retina = L.Browser.retina ? "@2x": "";
-    this.bboxStringToArray = this.bboxStringToArray.bind(this);
-    this.bboxStringToWKT = this.bboxStringToWKT.bind(this);
-    this.bboxStringToPolygon = this.bboxStringToPolygon.bind(this);
-    this.assymmetricPad = this.assymmetricPad.bind(this);
-    this.updateRectangleBounds = this.updateRectangleBounds.bind(this);
-    this.toggleRectangleVis = this.toggleRectangleVis.bind(this);
-    this.rectangleStyleColor = "#8e8e8e";
-    this.rectangleStyleWeight = 1;
-
-    //everything that starts with on is an event handler
-    // this.onDrag = this.onDrag.bind(this);
-    // this.onDragStart = this.onDragStart.bind(this);
-    // this.onDragEnd = this.onDragEnd.bind(this);
-    //this.onMoveEnd = this.onMoveEnd.bind(this);
-    // this.onZoomStart = this.onZoomStart.bind(this);
-    // this.onZoomEnd = this.onZoomEnd.bind(this);
     
-
+    //const viewport = DEFAULT_VIEWPORT;
+    //const retina = L.Browser.retina ? "@2x": "";
+    const rectangleStyleColor = "#8e8e8e";
+    const rectangleStyleWeight = 1;
+    
+    const ok_counties = "https://vectortileservices1.arcgis.com/jWQlP64OuwDh6GGX/arcgis/rest/services/ok_counties_v/VectorTileServer";
+    const esri_plss = "https://gis.blm.gov/arcgis/rest/services/Cadastral/BLM_Natl_PLSS_CadNSDI/MapServer";
+   
     //create object refs to access Leafler internals
-    this.mapRef = createRef();
-    this.rectangleRef = createRef();
-    this.geojsonRef = createRef();
+    //const mapRef = useRef();
+    const rectangleRef = useRef();
+    //const geojsonRef = useRef();
 
-    //this.mapboxToken = Config.mapboxToken;
-    //this.mapboxStyles = "https://api.mapbox.com/styles/v1";
-    // this.mapboxStreets = `${this.mapboxStyles}/krdyke/cjt1zbtwh1ctg1fo1l2nmkhqh/tiles/256/{z}/{x}/{y}${this.retina}?access_token=${this.mapboxToken}`;
-    // this.mapboxSatellite = `${this.mapboxStyles}/mapbox/satellite-streets-v10/tiles/{z}/{x}/{y}${this.retina}?access_token=${this.mapboxToken}`;
-    // this.mapboxOKCounties = `${this.mapboxStyles}/krdyke/cj7rus41ceagg2rny2tgglav3/tiles/256/{z}/{x}/{y}${this.retina}?access_token=${this.mapboxToken}`;
+    // const getData = useCallback(async () => {
+    //   try {
+    //     const result = await import('./data_mcc_okmaps.json');
+    //     setGeojson(result);
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // }, []);
+  
+    // useEffect(() => {
+    //   window.addEventListener('load', () => {
+    //     getData().then(() => console.log('data loaded successfully'));
+    //   });
+  
+    //   return () => {
+    //     window.removeEventListener('load', () => {
+    //       console.log('page unmounted');
+    //     });
+    //   };
+    // }, [getData]);
+
+  const toggleRedoSearchOnMapMove = (bool) => {
+    setRedoSearchOnMapMove(bool);
+  }
     
-    this.ok_counties = "https://vectortileservices1.arcgis.com/jWQlP64OuwDh6GGX/arcgis/rest/services/ok_counties_v/VectorTileServer";
-
-    //plss
-    this.esri_plss = "https://gis.blm.gov/arcgis/rest/services/Cadastral/BLM_Natl_PLSS_CadNSDI/MapServer";
-   }
-
  
-  bboxStringToArray(bbox_str){
+  const bboxStringToArray = (bbox_str) => {
     var a = bbox_str.split(",");
-    
-    return [[a[1],a[0]], [a[3],a[2]]];
+    return [[a[1], a[0]], [a[3], a[2]]];
   } 
 
-  bboxStringToWKT(bbox_str){
+  const bboxStringToWKT= (bbox_str) => {
     var bb = bbox_str.split(",");
     return "POLYGON((" + bb[0] + " " + bb[1] + "," + bb[0] + " " + bb[3]+
      "," + bb[2] + " " + bb[3]+ "," + bb[2] + " " + bb[1] +
      "," + bb[0] + " " + bb[1] + "))";
   };
 
-  bboxStringToPolygon(bbox_str){
-    let a = bbox_str.split(",");
-    let bbox_array = [a[0],a[1], a[2],a[3]];
-    return bboxPolygon(bbox_array);
-  }
 
 
-  assymmetricPad(bounds) {
+  const assymmetricPad = (bounds) => {
     //let bounds = map.leafletElement.getBounds();
     let sw = bounds._southWest,
         ne = bounds._northEast,
@@ -163,227 +242,116 @@ class MapView extends Component {
     heightBuffer = Math.abs(sw.lat - ne.lat) * hbr;
     widthBuffer = Math.abs(sw.lng - ne.lng) * wbr;
 
-    return [[sw.lat - heightBuffer, sw.lng - widthBuffer],
-            [ne.lat + heightBuffer, ne.lng + widthBuffer]]
+    return new L.LatLngBounds([[sw.lat - heightBuffer, sw.lng - widthBuffer],
+            [ne.lat + heightBuffer, ne.lng + widthBuffer]])
   }
 
-  componentDidUpdate(prevProps, prevState){
-    //console.log("MapView DidUpdate");
-    // if (this.props.base_features.length !== prevProps.base_features.length) {
-    //   let geojson = this.geojsonRef.current.leafletElement;
-    //   geojson.addData(this.props.base_features)
-    // }
-
-    // if (prevState.geojsonStuff === false && this.state.geojsonStuff !== false){
-    //   console.log(this.state.geojsonStuff);
-    //   this.mapRef.current.f1ire('moveend');
-    // }
+  const toggleRectangleVis= (bool) => {
+    console.log("MapView::toggleRectangleVis:", bool);
+    setIsRectangleShowing(bool);
   }
 
-  componentDidMount(prevProps, prevState){
-    //console.log("MapView DidMount");
-    //this.assymmetricPad();
-    //const map = this.refs.map.leafletElement
-    console.log(this.state.geojsonFile);
-    import("./data_mcc_okmaps.json").then((data) =>{
-      this.setState({geojsonStuff: data});
-    }) 
-
-    // axios.get(this.state.geojsonFile.default)
-    //   .then(resp => {
-    //     console.log(resp);
-    //     this.setState({geojsonStuff: resp.data});
-    //   });
-    
+  const toggleDrawnSearch = (bool) => {
+    console.log("MapView::toggleDrawnSearch:", bool);
+    setDrawnSearchBox(bool);
   }
 
-  toggleRectangleVis(bool) {
-    this.setState({isRectangleShowing: bool});
-  }
-
-  updateRectangleBounds(rectangle_bounds){
-    let rect = this.rectangleRef;
-    this.rectangle_bounds = rectangle_bounds;
+  const useRectangleBounds = (rectangle_bounds) => {
+    let rect = rectangleRef;
     if (rect.current){
-      rect.current.setBounds(rectangle_bounds);
+     rect.current.setBounds(rectangle_bounds);
     }
   }
-  onDrag(){
-    console.log("Event::drag");
-      // const map = this.mapRef.current;
-      // var b = this.assymmetricPad(map.leafletElement.getBounds());
-      // this.rect7angle_bounds = b;
-      // this.updateRectangleBounds();
-  }
 
-  onDragStart() {
-    console.log("Event::dragstart")
-    //let rect = this.rectangleRef.current.leafletElement;
-    //let map = this.mapRef.current.leafletElement;
-    //rect.addTo(map);
-  }
 
-  onDragEnd() {
-    console.log("Event::dragend");
-  //  let that = this;
-    //setTimeout(function(){that.setState({isRectangleShowing: false})}, 1);
-    //let rect = this.rectangleRef.current.leafletElement;
-    //let map = this.mapRef.current.leafletElement;
-    //rect.removeFrom(map);
-
-  }
-
-  onZoomStart() {
-
-  }
-
-  onZoomEnd() {
-
-  }
-
-  onMoveEnd(rectangle_bounds, geojsonStuff) {
+  const onMoveEnd = (rectangle_bounds) => {
     //console.log("bbox_polygon", bbox_polygon);
-    let bbox_str = new L.LatLngBounds(rectangle_bounds).toBBoxString();
-    let bbox_polygon = this.bboxStringToPolygon(bbox_str);
-    let bboxes = geojsonStuff;
-    let bboxes_with_ratios = [];
-    
-    
-    let startTime = performance.now();
-    featureEach(bboxes, function (feat, index){
-      let sim_score, sim_score2;
-      let intersection_area, union_area, feat_area, feat_center, bbox_area;
-      let bbox_center = center(bbox_polygon);
-
-      if (bbox_polygon && booleanIntersects(bbox_polygon, feat)) {
-          let intersection= intersect(bbox_polygon, feat);
-          feat_center = center(feat);
-          let center_distance = distance(bbox_center, feat_center);
-
-          if (intersection){
-            intersection_area = area(intersection) - center_distance; //subtract distance between centers
-            feat_area = area(feat);
-            bbox_area = area(bbox_polygon);
-          }
-          
-        sim_score = 2 * intersection_area / (feat_area + bbox_area);
-        if (Config.debug_mode){
-          feat.properties.sim_score = sim_score
-        }
-      }
-      else {
-        sim_score = 0;
-      }
-
-      if (Config.debug_mode){
-        console.log("sim_score: ", sim_score);
-      }
-      //console.log(feat.properties);
-      if (sim_score) {
-        let id = feat.properties.Identifier ? feat.properties.Identifier : feat.properties["File Name"];
-        //console.log(id);
-        bboxes_with_ratios.push(
-          {
-            "similarityScore":sim_score,
-           // "similarityScore2":sim_score2,
-            "properties": feat.properties,
-            "geometry": feat.geometry,
-            "isPinned": false,
-            "key": nanoid(),
-            "id": id
-          }
-        );
-
-      
-      } 
-    });  
-
-    console.log("Query time:", performance.now() - startTime);
-    bboxes_with_ratios = bboxes_with_ratios.sort((a,b) => {
-      return b.similarityScore - a.similarityScore;
-    });
-
-    if (Config.debug_mode){
-      window.debug_boxes = geojsonStuff;
+    if (!redoSearchOnMapMove){
+      return
     }
-    this.executeSpatialSearch(false, bboxes_with_ratios);
+    let bbox_str;
+    bbox_str = rectangle_bounds.toBBoxString();
+    console.log('bbox str:', bbox_str);
+    console.log('onMoveEnd::geojson:', props.geojson);
+    //console.log('onMoveEnd::geojsonState:', geojsonState);
     
+    let bboxes_with_ratios = MapSearch(bbox_str, props.geojson);
+    //console.log(props);
+    props.executeSpatialSearch(bboxes_with_ratios);
+    props.toggleResetSidebar(true);
+        
   }
 
-  render() {
-    const labelLayerUrl = this.labelLayerUrl;
-    const rectangle_bounds = this.rectangle_bounds;
-    const isRectangleShowing = this.state.isRectangleShowing;
-    const base_features = this.state.base_features;
 
-    const search_results = this.props.search_results;
-    const hover_feature = this.props.hover_feature;
-    const pinned_features = this.props.pinned_features;
-    const { BaseLayer, Overlay } = LayersControl;
-    let openModal = this.props.openModal;
-    let rectangle;
-    let geojson;
-    let pinned_geojson;
-    let debug_boxes;
 
-    if (Config.debug_mode){
-      debug_boxes = <GeoJSON
-          key={nanoid()}
-          style={function(f){
-
-            if (f.properties.sim_score == 0){
-              return {color:"blue", weight: "0.25"}
-            }
-              if (f.properties.sim_score <= 0.2){
-                return {color:"#fef0d9", weight: "0.25"}
-              }
-              else if (f.properties.sim_score <= 0.4){
-                return {color:"#fdcc8a", weight: "0.5"}
-              }
-              else if (f.properties.sim_score <= 0.6){
-                return {color:"#fc8d59", weight: "0.75"}
-              }
-              else if (f.properties.sim_score <= 0.8){
-                return {color:"#e34a33", weight: "1.0"}
-              }
-              else if (f.properties.sim_score <= 1){
-                
-                return {color:"#b30000", weight: "1.5"}
-              }
-              else {
-                return {color:"#b30000", weight: "1.5"}
-                
-              }
-            } 
-          }
-          fillOpacity={0}
-          fillColor="red" 
-          data={window.debug_boxes}
-          eventHandlers={{
-        click: (e) => {
-          //console.log();
-          openModal(e.sourceTarget.feature.properties);
-        },
-      }}
-     >
-        
-    </GeoJSON>;
+  // const labelLayerUrl = this.labelLayerUrl;
+  // const rectangle_bounds = this.rectangle_bounds;
+  // const isRectangleShowing = this.state.isRectangleShowing;
+  // const base_features = this.state.base_features;
+  
+  //const search_results = props.search_results;
+  const hover_feature = props.hover_feature;
+  const pinned_features = props.pinned_features;
+  //const { BaseLayer, Overlay } = LayersControl;
+  let openModal = props.openModal;
+  let hover_layer;
+  let rectangle;
+  let pinned_geojson;
+  let debug_boxes;
+  
+  if (Config.debug_mode){
+    debug_boxes = <GeoJSON
+                          key={nanoid()}
+                          style={function(f){
+                              if (f.properties.sim_score <= 0.1){
+                                return {color:"blue", weight: "0.25"}
+                              }
+                              if (f.properties.sim_score <= 0.2){
+                                return {color:"#fef0d9", weight: "0.25"}
+                              }
+                              else if (f.properties.sim_score <= 0.4){
+                                return {color:"#fdcc8a", weight: "0.5"}
+                              }
+                              else if (f.properties.sim_score <= 0.6){
+                                return {color:"#fc8d59", weight: "0.75"}
+                              }
+                              else if (f.properties.sim_score <= 0.8){
+                                return {color:"#e34a33", weight: "1.0"}
+                              }
+                              else if (f.properties.sim_score <= 1){
+                                
+                                return {color:"#b30000", weight: "1.5"}
+                              }
+                              else {
+                                return {color:"pink", weight: "0.25"}
+                                
+                              }
+                            }}
+                        fillOpacity={0}
+                        fillColor="red" 
+                        data={window.debug_boxes}
+                        eventHandlers={{
+                          click: (e) => {
+                            //console.log();
+                            openModal(e.sourceTarget.feature.properties);
+                          },
+                        }}
+                      ></GeoJSON>;
     }
-
-
-    if (isRectangleShowing){
+      
+    //if (isRectangleShowing){
       rectangle = <Rectangle 
-                     ref={this.rectangleRef}
-                     renderer={L.svg({padding:100})} 
-                     weight={this.rectangleStyleWeight} 
-                     color={this.rectangleStyleColor} 
-                     bounds={rectangle_bounds}
-                     />
-    }
+                            ref={rectangleRef}
+                            renderer={L.svg({padding:100})} 
+                            weight={rectangleStyleWeight} 
+                            color={rectangleStyleColor} 
+                            bounds={rectangle_bounds}
+                        />
+    //}
 
     if (hover_feature) { // that is, if search_results contains geojson
-      geojson = <GeoJSON
-                  ref={this.geojsonRef}
+      hover_layer = <GeoJSON
+                  // ref={this.geojsonRef}
                   key={Math.random().toString()}
                   weight="1"
                   fillOpacity={0.01}
@@ -393,7 +361,7 @@ class MapView extends Component {
 
     if (pinned_features.length > 0) {
       pinned_geojson =  <GeoJSON
-                          ref={this.pinnedGeojsonRef}
+                          //ref={pinnedGeojsonRef}
                           key={nanoid()}
                           weight="1"
                           color="red"
@@ -411,31 +379,23 @@ class MapView extends Component {
                         </GeoJSON>;
     }
 
-    return <div className="MapView">
-            <MapContainer minZoom={4}
-             maxZoom={18}
-             ref={this.mapRef}
-             onDrag={this.onDrag}
-             onDragStart={this.onDragStart}
-             onDragEnd={this.onDragEnd}
-             onMoveEnd={this.onMoveEnd}
-             onZoomStart={this.onZoomStart}
-             onZoomEnd={this.onZoomEnd}
-             className="map"  
-             center={[36,-97.5]}
-             zoom={7}
-            >
-                <MapEvents isRectangleShowing={this.state.isRectangleShowing}
-                           toggleRectangleVis= {this.toggleRectangleVis} 
-                           updateRectangleBounds={this.updateRectangleBounds}
-                           assymmetricPad={this.assymmetricPad}
-                           onMoveEnd={this.onMoveEnd}
-                           bboxStringToArray={this.bboxStringToArray}
-                           bboxStringToPolygon={this.bboxStringToPolygon}
-                           bboxStringToWKT={this.bboxStringToWKT}
-                           geojsonStuff={this.state.geojsonStuff}
-                           executeSpatialSearch={this.props.executeSpatialSearch}
-                           />
+    return (
+     <div className="MapView">
+            <GeojsonContext.Provider value={{drawnSearchBox, isRectangleShowing, 
+                                            toggleRectangleVis, useRectangleBounds, 
+                                            assymmetricPad, bboxStringToArray,
+                                            bboxStringToWKT, toggleDrawnSearch, onMoveEnd
+                                            }}>
+              <MapContainer minZoom={4}
+                  maxZoom={18}
+                  className="map"  
+                  center={[36,-97.5]}
+                  zoom={7}
+                  >
+                <MapEvents executeSpatialSearch={props.executeSpatialSearch}/> 
+                <Control className='toggle-search-control leaflet-bar' position='topleft'>
+                  <ToggleSearchControl toggleRedoSearchOnMapMove={toggleRedoSearchOnMapMove} />
+                </Control>
                 <LayersControl collapsed={false} position="topright">
                   <LayersControl.BaseLayer checked name="Topographic">
                     <VectorBasemapLayer apiKey={Config.arcgisAPIkey} checked name="ArcGIS:Topographic" /> 
@@ -444,24 +404,26 @@ class MapView extends Component {
                     <VectorBasemapLayer apikey={Config.arcgisAPIkey} name="ArcGIS:Imagery" />                    
                   </LayersControl.BaseLayer>
                   <LayersControl.Overlay name="OK Counties">
-                      <VectorTileLayer apikey={Config.arcgisAPIkey} url={this.ok_counties}/>
+                      <VectorTileLayer apikey={Config.arcgisAPIkey} url={ok_counties}/>
                   </LayersControl.Overlay>
-                  <LayersControl.Overlay name="PLSS">
-                    <DynamicMapLayer url={this.esri_plss}/>
+                  <LayersControl.Overlay name="Public Land Survey">
+                    <DynamicMapLayer url={esri_plss}/>
                   </LayersControl.Overlay>
                 </LayersControl>
-
+                  <DrawComponent executeSpatialSearch={props.executeSpatialSearch}/>
+                
                 {debug_boxes}
                 {rectangle}
                 {pinned_geojson}
-                {geojson}
+                {hover_layer}
 
            </MapContainer>
+          </GeojsonContext.Provider>
           </div>
     
       
   
-  }
-}
+  )}
+
 
 export default MapView;

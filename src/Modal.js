@@ -1,36 +1,36 @@
 import React from 'react';
 import ReactModal from 'react-modal';
-import {css, jsx} from '@emotion/react';
-import SyncLoader from 'react-spinners/SyncLoader';
-import Config from './Config';
-import { nanoid } from 'nanoid';
+import ClipLoader from 'react-spinners/SyncLoader';
 import ShowMoreText from "react-show-more-text";
-import axios from 'axios';
-import * as L from 'leaflet';
-import { MapContainer } from 'react-leaflet';
-//import { IIIFLayer, FullscreenControl } from './react-leaflet-iiif';
+import { nanoid } from 'nanoid';
 import { OpenSeadragonViewer } from "openseadragon-react-viewer";
-import CloverIIIF from "@samvera/clover-iiif";
-import {iiifConstructImageUrl, iiifConstructManifestUrl, 
+import {iiifConstructManifestUrl, 
+        //iiifConstructImageUrl, 
         iiifRequestManifest} from './IIIF';
-
-
 import './Item.css';
 import './Modal.css';
+//import {css, jsx} from '@emotion/react';
+//import Config from './Config';
+//import axios from 'axios';
+//import * as L from 'leaflet';
+//import { MapContainer } from 'react-leaflet';
+//import { IIIFLayer, FullscreenControl } from './react-leaflet-iiif';
+//import CloverIIIF from "@samvera/clover-iiif";
+
+
 
 ReactModal.setAppElement('#root');
-
-
 
 class Modal extends React.PureComponent {
   constructor(props) {
     super(props);
-    this.spinner_css = css`{
-      position:absolute;
-      top:50%;
-      left:50%;
-      z-index:1000000;
-    }`;
+    this.spinner_css = {
+      "position":"absolute",
+      "top":"50%",
+      "left":"50%",
+      "zIndex":"1000000",
+      "padding":"10px"
+    };
     this.formatContent = this.formatContent.bind(this);
     this.afterOpenModal = this.afterOpenModal.bind(this);
     this.handleCloseModal = this.handleCloseModal.bind(this);
@@ -48,38 +48,76 @@ class Modal extends React.PureComponent {
   
   componentDidUpdate(prevProps, prevState){
     console.log("Modal::componentDidUpdate");
-    console.log("     ::old metadata::", prevState.manifest_id);
-    console.log("     ::new metadata::", this.state.manifest_id);
-    if (prevState.manifest_id !== this.state.manifest_id && this.state.manifest_id.length > 0){
-      console.log("          ::format manifest data");
-       this.setState({formatted_content: this.formatContent(this.state.manifest_id, this.state.manifest_metadata)});
-       
+    if (prevState.manifest_id !== this.state.manifest_id && 
+        this.state.manifest_id.length > 0){
+          
+          console.log("     ::old metadata::", prevState.manifest_id);
+          console.log("     ::new metadata::", this.state.manifest_id);
+          let formatted_content = this.formatContent(this.state.manifest_id, 
+              this.state.manifest_metadata, this.props.modalInfo.modalCollection);
+          this.setState({ formatted_content: formatted_content });
     }
   }
 
 
- formatContent(manifest_id, manifest_metadata) {
-  //let modalInfo = this.props.modalInfo;
-    const options = {
-         // Set canvas zooming onScoll (this defaults to false)
-        openSeadragon: {
-        ajaxWithCredentials:false,
-        gestureSettingsMouse: {
-          scrollToZoom: true
-        },
-        navigatorHeight: "133px",
-        navigatorWidth: "173px"
-      },
-      withCredentials: false
-      
+ formatContent(manifest_id, manifest_metadata, manifest_collection) {
+  
+  console.log(manifest_metadata);
+  const collection_field_info = this.props.collectionFieldInfo;
+
+  console.log("Collection name: ")
+  console.log(collection_field_info);
+  
+  const collection = manifest_collection.replace("/","");
+  manifest_metadata.sort((a,b) => {
+    let a_name = a.label.none[0];
+    let b_name = b.label.none[0];
+    let a_index, b_index;
+    if (a_name in collection_field_info[collection]){
+      a_index = collection_field_info[collection][a_name]["index"];
     }
+    if (b_name in collection_field_info[collection]){
+      b_index = collection_field_info[collection][b_name]["index"];
+    }
+
+    if (a_index < b_index) {
+      return -1;
+    }
+    if (a_index > b_index) {
+      return 1;
+    }
+    // a must be equal to b
+    return 0;
+
+
+  })
+  // manifest_metadata.forEach((v,i) => {
+  //   let fieldname = v.label.none[0];
+  //   let fieldval = v.value.none[0];
+  //   if (fieldname in collection_field_info[collection]){
+  //     let fieldindex = collection_field_info[collection][fieldname]["index"];
+  //       }
+  // });
+  //let modalInfo = this.props.modalInfo;
+    // const options = {
+    //   openSeadragon: {
+    //       ajaxWithCredentials:false,
+    //       gestureSettingsMouse: {
+    //         scrollToZoom: true
+    //       },
+    //       navigatorHeight: "133px",
+    //       navigatorWidth: "173px"
+    //   },
+    //   withCredentials: false
+      
+    // }
     let content = <div id='modalContent'>
                     {/* <CloverIIIF id={manifest_id} options={options}/> */}
-
+ 
                     <OpenSeadragonViewer 
                         manifestUrl={manifest_id}
                         options={{
-                          height:600,
+                          height:500,
                           deepLinking: false
                         }} 
                         openSeadragonOptions={{
@@ -98,7 +136,6 @@ class Modal extends React.PureComponent {
                       <FullscreenControl />
                     </MapContainer> */}
 
-
                     <ul className="metadataList">
                       {manifest_metadata.map(item => (
                         <li className="metadataPair" key={nanoid()}>
@@ -115,19 +152,23 @@ class Modal extends React.PureComponent {
   afterOpenModal() {
     console.log("Modal::afterOpenModal");
     let modalInfo = this.props.modalInfo;
-
+    console.log("     ::modalInfo::", modalInfo);
+    
     let that = this;
     
     let manifest_url = iiifConstructManifestUrl(modalInfo.modalCollectionId,
       modalInfo.modalCollection);
 
     //console.log(manifest_url);
-    
+    this.setState({'show_spinner': true});
+
+    //TODO fix this crap
     iiifRequestManifest(manifest_url).then(
         function(r) {
           that.setState({
             manifest_id: r.id.replace("/iiif/", "/iiif/2/"),
-            manifest_metadata: r.metadata
+            manifest_metadata: r.metadata,
+            show_spinner: false
           });
         }
     );
@@ -175,10 +216,15 @@ class Modal extends React.PureComponent {
           contentLabel='Modal'>
           
       <button className="modalCloseButton" onClick={this.handleCloseModal}>X</button>
-      <SyncLoader  css={this.spinner_css} 
-        loading={this.state.show_spinner} 
-        color={"#ff6600"}
-      />
+
+      {this.state.show_spinner &&
+        <div className="modal-loader-div">
+          <ClipLoader  cssOverride={this.spinner_css} 
+            loading={true} 
+            color={"#a5a5a5"}
+            />
+        </div>
+      }
       {content}
 
     </ReactModal>

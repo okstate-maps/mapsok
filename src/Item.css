@@ -8,12 +8,31 @@
   padding-left: 7px;
   padding-right: 7px;
 }
+
+
+.flexlist.pinned-item {
+  flex-direction: row;
+  background-color: #ffe3c6;
+  min-width: 300px;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
+
 div.show-footprint-wrapper {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
+div.pin-item-wrapper label, div.unpin-item-wrapper label  {
+  padding: 5px;
+  cursor:pointer;
+}
 
 
 div.modal-trigger-wrapper {
@@ -22,6 +41,11 @@ div.modal-trigger-wrapper {
   flex-basis:100px;
   align-items: center;
   justify-content: space-between;
+}
+
+
+button.pinned-item > div.modal-trigger-wrapper > p {
+  font-size: 0.8rem;
 }
 
 div.modal-trigger-wrapper > p {
@@ -37,7 +61,12 @@ button.item:focus-visible {
   border: none;
 }
 
- 
+
+
+input.pin-checkbox, input.unpin-checkbox {
+    display:none;
+ }
+
 .item {
   background-color: white;
   padding:5px;
@@ -63,6 +92,15 @@ button.item:focus-visible {
   line-height: 1.2;
 }
 
+.pinned-item .thumbnail-background {
+  height: 45px;
+}
+
+.pinned-item .thumbnail-background .feature-thumbnail {
+  vertical-align: middle;
+  max-height: 45px;
+  max-width: 150px;
+}
 
 .thumbnail-background {
     display: flex;

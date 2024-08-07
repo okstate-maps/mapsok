@@ -1,35 +1,37 @@
 import React, { Component, PureComponent } from 'react';
 import _ from 'lodash';
 import { nanoid } from 'nanoid';
-import * as Wkt from 'wicket';
 import axios from 'axios';
 import { ResizableBox } from 'react-resizable';
-
 import Config from './Config';
+
+import { TextSearch } from './TextSearch';
 import { Item, PinnedItem } from './Item';
 import { findWithAttr } from './Util';
 import './Sidebar.css';
+
 
 class Sidebar extends Component {
   //static whyDidYouRender = false;
 
   constructor(props) {
     super(props);
-    this.TEXT_SEARCH_URL_BASE = 'https://dc.library.okstate.edu/digital/bl/dmwebservices/index.php?q=dmQuery/OKMaps';
-    this.wkt = new Wkt.Wkt();
+    
     this.loadMore = this.loadMore.bind(this);
     this.onScroll = _.throttle(this.onScroll.bind(this), 400, {trailing:true});
     this.sidebarRef = React.createRef();
-    this.handleChange = this.handleChange.bind(this);
+    this.resetSidebar = this.resetSidebar.bind(this);
+    //this.handleChange = this.handleChange.bind(this);
     this.handleItemPinning = this.handleItemPinning.bind(this);
-    this.executeTextSearch = this.executeTextSearch.bind(this);
-    this.updateSearchResults = this.updateSearchResults.bind(this);
+    //this.executeTextSearch = this.executeTextSearch.bind(this);
+    //this.updateSearchResults = this.updateSearchResults.bind(this);
 
     this.state = {
       scrollHeight: 0,
       clientHeight: 0,
       search_page: 0,
-      searchText: false
+      searchText: false,
+      pinningChange: false
     }
   }
 
@@ -37,19 +39,10 @@ class Sidebar extends Component {
     console.log("loadMore");
   }
 
-  updateSearchResults(results) {
-    this.props.updateSearchResults(results);
-  }
-
-  handleChange(e){
-    //console.log(Wkt);
-    if (e.target.value.length < 4){
-      return;
-    }
-    else {
-      this.executeTextSearch(e.target.value);
-      console.log("trigger text search now");
-    }
+  resetSidebar(){
+    this.setState({search_page: 0});  
+    this.sidebarRef.current.scrollTop = 0;
+    this.props.toggleResetSidebar(false);
   }
 
   handleItemPinning(item) {
@@ -60,93 +53,32 @@ class Sidebar extends Component {
   }
   
 
-  executeTextSearch(search_text){
-    //ceontentdm api search reference
-    //https://help.oclc.org/Metadata_Services/CONTENTdm/Advanced_website_customization/API_Reference/CONTENTdm_API/CONTENTdm_Server_API_Functions_-_dmwebservices
-
-    //contentdm search string example
-    //https://dc.library.okstate.edu/digital/bl/dmwebservices/index.php?q=dmQuery/OKMaps/title^State+of+Sequoyah^all^and/title/title/10/1/0/0/1/0/0/1/json
-    
-    //collections = !-delimited list of collection aliases, or "all" for all collections.
-    
-    //searchstrings = a  four-part, ^-delimited group in the order field^string^mode^operator.
-    //              - Use "CISOSEARCHALL" for all fields; mode can be "all", "any", "exact", or "none"; operator can be "and" or "or".
-    //              - Multiple words in string need to be separated by "+".
-    //              - Up to six groups can be included, delimited by "!".
-    //              - To browse a collection, specify a single alias and "0" as a searchstrings value. The operator for the last searchstring will be ignored.
-
-    // fields = !-delimited list of field nicknames, listing the fields for which metadata should be returned. 
-    //        - A maximum of five fields may be specified. A maximum of 100 bytes is returned for each field.
-    
-    // sortby = !-delimited list of field nicknames, detailing how the result should be sorted, in field order.
-    //        - The field nicknames must appear in the field array. 
-    //        - If the last element in the array is specified as "reverse". The sort will be in reverse (descending) order. 
-    //        - Use "nosort" to sort the query by relevance.
-
-    // maxrecs = the maximum number of records to return, from 1 to 1024.
-    
-    // start = the starting number of the first item returned in the result.
-
-    let collections = 'OKMaps';
-    //let searchstrings = `title!full!source!audien^${search_text}^all^or`;
-    let searchstrings = `title^${search_text}^any^or`;
-    
-    let fields = `title!dmrecord!coordi`;
-    let sortby = 'nosort';
-    let maxrecs = '10';
-    let start = '1';
-
-    let text_search_string = "https://dc.library.okstate.edu/digital/bl/dmwebservices/index.php?q=dmQuery" +
-        `/${collections}/${searchstrings}/${fields}/${sortby}/${maxrecs}/${start}/0/0/1/0/0/1/json`;
-    let that = this;
-
-    axios.get(text_search_string, {
-      transformResponse: [function (data) {
-        // Do whatever you want to transform the data
-        let json = JSON.parse(data);
-        let d = json.records.map((v, i) => {
-          //console.log(v);
-          v.properties = v;
-          v.properties.contentdm_number = v.properties.dmrecord;
-          if (v.properties.coordi !== ""){
-            try {
-              v.geometry = that.wkt.read(v.properties.coordi).toJson();
-            }
-            catch (e) {
-              console.log("malformed WKT", v.properties);
-            }
-          }
-          
-          v.key = nanoid();
-          v.id = v.properties.collection + v.properties.contentdm_number;
-          return v;
-        });
-        //console.log(d);
-        return d
-        }]
-      })
-      
-      .then((data)=>{
-        //console.log(data);
-        that.updateSearchResults(data)
-      });
-  }
+  // shouldComponentUpdate(nextProps, nextState){
+  //   if (this.props.pinned_features.length !== nextProps.pinned_features.length){
+  //     return true;
+  //   }
+  //   return true;
+  // }   
 
   componentDidUpdate(prevProps, prevState){
+    if (this.props.reset_sidebar){
+      this.resetSidebar();
+    }
     
-    if (!_.isEqual(prevProps.search_results.slice(10), this.props.search_results.slice(10))) {
-      console.log('search results changed');
+    // if (!_.isEqual(prevProps.search_results.slice(10), this.props.search_results.slice(10))) {
+    //   console.log('search results changed');
       
-      if (prevState.search_page !== 0){
-        this.setState({search_page: 0});
-      } 
+    //   if (prevState.search_page !== 0){
+    //     this.setState({search_page: 0});
+    //   } 
       
-      this.sidebarRef.current.scrollTop = 0;
+    //   this.sidebarRef.current.scrollTop = 0;
+    // }
+    // if (prevProps.pinned_features.length !== this.props.pinned_features.length){
+    //   //this.forceUpdate(); 
+    // }
+    if (this.state.pinningChange) {
     }
-    if (prevProps.pinned_features.length !== this.props.pinned_features.length){
-      //this.forceUpdate(); 
-    }
- 
   }
 
   onScroll(){
@@ -177,10 +109,13 @@ class Sidebar extends Component {
 
   render() {
     let search_page = this.state.search_page;
+    //console.log("search_page", search_page);
     let search_results = this.props.search_results || [];
     let pinned_features = this.props.pinned_features || [];
     let display_results = [];
-    console.log("render sidebar");
+    let geojson = this.props.geojson;
+    //console.log("render sidebar");
+    //console.log(this.props.updateSearchResults);
     
     if (search_results.length > 0){
       //console.log("search_results", search_results);
@@ -192,12 +127,10 @@ class Sidebar extends Component {
     return (
         <section className="Sidebar">
             <div className="Sidebar-controls">
-              <input type='search' 
-                  name="textsearch"
-                  id="textsearch"
-                  className="textinput"
-                  defaultValue={this.state.searchText === true ? this.state.searchText : ""}
-                  onChange={this.handleChange}/>
+              <TextSearch
+                geojson={geojson}
+                updateSearchResults={this.props.updateSearchResults}
+                searchPage={search_page}/>
             </div>
 
 

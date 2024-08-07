@@ -1,6 +1,8 @@
 import React, { PureComponent } from 'react';
-import {css, jsx} from '@emotion/react';
+//import {css, jsx} from '@emotion/react';
 import BounceLoader from 'react-spinners/BounceLoader';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMap } from '@fortawesome/free-solid-svg-icons';
 import { requestFieldInfo, 
          constructFieldInfoRequestUrl } from './FieldInfo';
 import Modal from './Modal';
@@ -9,18 +11,22 @@ import MapView from './MapView';
 import Sidebar from './Sidebar';
 import {findWithAttr} from './Util';
 import './App.css';
+import { GeojsonContext } from './Contexts';
+import * as geojson from './data_mcc_okmaps.json';
+
 
 
 class App extends PureComponent {
   //static whyDidYouRender = true;
   constructor(props) {
     super(props);
-    this.spinner_css = css`{
-      position:absolute;
-      top:50%;
-      left:50%;
-      z-index:1000000;
-    }`;
+    this.spinner_css = {
+      "position":"absolute",
+      "top":"50%",
+      "left":"50%",
+      "zIndex":"1000000",
+      "padding":"10px"
+    };
     this.state = { "search_results": [],
                    "base_features": [],
                    "pinned_features": [],
@@ -39,6 +45,7 @@ class App extends PureComponent {
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
     this.toggleModal = this.toggleModal.bind(this);
+    this.toggleResetSidebar = this.toggleResetSidebar.bind(this);
     this.toggleSpinner = this.toggleSpinner.bind(this);
     this.handleItemPinning = this.handleItemPinning.bind(this);
   }
@@ -48,17 +55,16 @@ class App extends PureComponent {
     console.log("App::openModal");
     this.setState({
       modalInfo: {
-                  modalCollection: modalContent["Reference URL"].split("/")[6],
-                  modalCollectionId: modalContent["Reference URL"].split("/")[8]
+                  modalCollection: modalContent["cdmco"],
+                  modalCollectionId: modalContent["cdmn"]
                 }
     });
     this.toggleModal(true);
   }
 
-  closeModal(modalType, modalContent){
+  closeModal(){
     console.log("App::closeModal");
     this.setState({
-      modalType: modalType,
       modalContent: ""
     });
     this.toggleModal(false);
@@ -69,12 +75,18 @@ class App extends PureComponent {
     this.setState({search_results: results.data});
   }
 
-  executeSpatialSearch(query, results){
+  toggleResetSidebar(bool){
+    console.log("toggleResetSidebar::" + bool);
+    this.setState({reset_sidebar: bool});
+  }
+  executeSpatialSearch(results){
     console.log("App::executeSpatialSearch");
+    console.log(results);
 
     if (results) {
       this.setState({showSpinner: true});
       this.setState({search_results: results});
+      this.setState({reset_sidebar: true});
     }
     
     this.setState({showSpinner: false});
@@ -99,12 +111,20 @@ class App extends PureComponent {
     console.log("App::DidMount");
     let colls = Config.collections;
     let that = this;
-    colls.forEach((v, i) => {
-      var u = constructFieldInfoRequestUrl(v);
-      requestFieldInfo(u).then(
-        (r) => {
+
+    colls.forEach((collection, i) => {
+      var url = constructFieldInfoRequestUrl(collection);
+      requestFieldInfo(url).then(
+        (response) => {
           let current_collection_info = that.state.collection_field_info;
-          current_collection_info[v] = r.data
+          let fields = response.data;
+          current_collection_info[collection] = {};
+          fields.forEach((field, index) => {
+              //console.log(field.name);
+              current_collection_info[collection][field.name] = field;
+              current_collection_info[collection][field.name]["index"] = index;  
+          })
+          //console.log(current_collection_info);
           that.setState({collection_field_info: current_collection_info});
         } 
       )
@@ -129,7 +149,7 @@ class App extends PureComponent {
       if (lookForIt >= 0) {
         new_state.pinned_features.splice(lookForIt, 1);  
         new_state.search_results[lookAgain].isPinned = false;
-              }
+      }
       else if (lookForIt === -1 ) {
         new_state.pinned_features.push(item);
         //debugger;
@@ -153,47 +173,60 @@ class App extends PureComponent {
     const pinned_features = this.state.pinned_features;
     const hover_feature = this.state.hover_feature;
     const modalInfo = this.state.modalInfo;
+    const collection_field_info = this.state.collection_field_info;
 
     return (
+      //<GeojsonContext.Provider value={geojson}>
       <>
-      <div id='modalRoot'></div>
-      <div className="App">
-        
-      <Modal isOpen={this.state.modalIsOpen} 
-            toggleSpinner={this.toggleSpinner} 
-            openModal={this.openModal}
-            closeModal={this.closeModal}
-            modalInfo={modalInfo}
-            />       
+        <div id='modalRoot'></div>
+        <div className="App">
+          
+        <Modal isOpen={this.state.modalIsOpen} 
+              toggleSpinner={this.toggleSpinner} 
+              openModal={this.openModal}
+              closeModal={this.closeModal}
+              modalInfo={modalInfo}
+              collectionFieldInfo={collection_field_info}
+              />       
 
-        <header className="App-header">
-         <h1>mapsOK</h1>
-        </header>
+          <header className="App-header">
+          <h1>
+              <FontAwesomeIcon icon={faMap} size="xl"/>
+                &nbsp;&nbsp;&nbsp;mapsOK&nbsp;&nbsp;&nbsp;
+              <FontAwesomeIcon icon={faMap} size="xl"/>
+            </h1>
+          </header>
 
-        <BounceLoader 
-          css={this.spinner_css} 
-          loading={this.state.showSpinner} 
-          color={"#ff6600"}/>
-
-         <Sidebar 
-           search_results={search_results} 
-           updateSearchResults={this.updateSearchResults}
-           onItemMouseOver={this.onItemMouseOver} 
-           onItemMouseOut={this.onItemMouseOut} 
-           openModal={this.openModal} 
-           handleItemPinning={this.handleItemPinning}
-           pinned_features={this.state.pinned_features}
-           />
-        <section className="App-map">
-          <MapView 
-            hover_feature={hover_feature} 
-            search_results={search_results} 
-            pinned_features={pinned_features}
-            openModal={this.openModal} 
-            executeSpatialSearch={this.executeSpatialSearch} />  
-        </section>
-      </div>
-      </>
+          <BounceLoader 
+            cssOverride={this.spinner_css}
+            loading={this.state.showSpinner} 
+            color={"#ff6600"}/>
+            <Sidebar 
+              search_results={search_results} 
+              geojson={geojson}
+              updateSearchResults={this.updateSearchResults}
+              onItemMouseOver={this.onItemMouseOver} 
+              onItemMouseOut={this.onItemMouseOut} 
+              openModal={this.openModal} 
+              handleItemPinning={this.handleItemPinning}
+              pinned_features={this.state.pinned_features}
+              reset_sidebar={this.state.reset_sidebar}
+              toggleResetSidebar={this.toggleResetSidebar}
+              />
+          <section className="App-map">
+                <MapView 
+                  hover_feature={hover_feature} 
+                  search_results={search_results} 
+                  pinned_features={pinned_features}
+                  geojson={geojson}
+                  openModal={this.openModal} 
+                  executeSpatialSearch={this.executeSpatialSearch}
+                  toggleResetSidebar={this.toggleResetSidebar}
+                  />  
+          </section>
+        </div>
+        </>
+      //</GeojsonContext.Provider>
     );
   }
 }

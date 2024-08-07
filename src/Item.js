@@ -1,8 +1,15 @@
 import React, { PureComponent } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faThumbtack, faCheckSquare } from '@fortawesome/free-solid-svg-icons';
+import { faSquare } from '@fortawesome/free-regular-svg-icons';
+
 import CircleLoader from 'react-spinners/CircleLoader';
 import Config from './Config';
 import './Item.css';
 import { nanoid } from 'nanoid';
+
+//const element = 
+
 
 export class Item extends PureComponent {
   //static whyDidYouRender = true;
@@ -14,6 +21,7 @@ export class Item extends PureComponent {
     this.onMouseLeave = this.onMouseLeave.bind(this);
     this.onChange = this.onChange.bind(this);
     this.onThumbnailLoad = this.onThumbnailLoad.bind(this);
+    this.onThumbnailError = this.onThumbnailError.bind(this);
     this.state = {"thumbnailLoading": true,
                   "pinning": false};
   }
@@ -51,15 +59,19 @@ export class Item extends PureComponent {
     this.setState({"thumbnailLoading": false});
   }
 
+  onThumbnailError() {
+    this.setState({"thumbnailLoading": false});
+  }
+
   render() {
     //console.log("item render");
     //console.log(this.props);
-  	let ref_url = this.props.featureProps["Reference URL"];
-    let contentdm_number = ref_url.slice(ref_url.lastIndexOf("/")+1);
-    let re = /\/collection\/(.*)\/id/;
-    let cdm_collection = ref_url.match(re)[1];
+  	//let ref_url = this.props.featureProps["Reference URL"];
+    let contentdm_number = this.props.featureProps["cdmn"];
+    let cdm_collection = this.props.featureProps["cdmco"];
     let thumbnail_url = Config.thumbnail_url.replace("{{contentdm_number}}", contentdm_number)
                                             .replace("{{cdm_collection}}", cdm_collection);
+    let pin_item_id = nanoid();
     
 
     return (
@@ -67,20 +79,28 @@ export class Item extends PureComponent {
               onMouseLeave={this.onMouseLeave} 
               className="item flexlist">
             <div className="pin-item-wrapper">
+              <label htmlFor={pin_item_id}>
+                <FontAwesomeIcon 
+                  icon={this.props.isPinned ? faCheckSquare : faSquare} 
+                  size='xl' />
               <input name="pin-item" 
+                     className="pin-checkbox"
+                     id={pin_item_id}
                      onChange={this.onChange} 
                      type="checkbox" 
                      checked={this.props.isPinned} />
+                     </label>
             </div>
             <div onClick={this.openModal} className="modal-trigger-wrapper">
-                <p className="item-title-long">{this.props.featureProps.Title.length >= 75 ? this.props.featureProps.Title.slice(0,75)+ "...": this.props.featureProps.Title}</p>
-                <p className="item-title-short">{this.props.featureProps.Title.length >= 25 ? this.props.featureProps.Title.slice(0,25)+ "...": this.props.featureProps.Title}</p>
-                <p>{this.props.featureProps["Date Issued"]}</p>             
+                <p className="item-title-long">{this.props.featureProps.title.length >= 75 ? this.props.featureProps.title.slice(0,75)+ "...": this.props.featureProps.title}</p>
+                <p className="item-title-short">{this.props.featureProps.title.length >= 25 ? this.props.featureProps.title.slice(0,25)+ "...": this.props.featureProps.title}</p>
                 <div className="thumbnail-background">
                   <CircleLoader color={'#ff6600'} loading={this.state.thumbnailLoading}/>
                   <img className="feature-thumbnail" 
                       onLoad={this.onThumbnailLoad} 
-                      alt={"thumbnail image for " + this.props.featureProps.Title}
+                      onError={this.onThumbnailError}
+                      loading="lazy"
+                      alt={"thumbnail image for " + this.props.featureProps.title}
                       src={thumbnail_url}
                     />
                 </div>                 
@@ -99,7 +119,10 @@ export class PinnedItem extends PureComponent {
     this.openModal = this.openModal.bind(this);
     this.onClick = this.onClick.bind(this);
     this.onThumbnailLoad = this.onThumbnailLoad.bind(this);
-    this.state = {"thumbnailLoading": true}
+    this.onMouseEnter = this.onMouseEnter.bind(this);
+    this.onMouseLeave = this.onMouseLeave.bind(this);
+    this.state = {"thumbnailLoading": true,
+                  "is_bouncing": false}
   }
 
   openModal() {
@@ -115,13 +138,16 @@ export class PinnedItem extends PureComponent {
     });
   }
 
-  onMouseOver() {
+  onMouseEnter() {
     //let geom = this.props.featureGeom;
     //this.props.onItemMouseOver(geom);
+    this.setState({is_bouncing: true});
   }
 
-  onMouseOut() {
+  onMouseLeave() {
   	//this.props.onItemMouseOut();
+    this.setState({is_bouncing: false});
+  
   }
 
   onThumbnailLoad() {
@@ -130,31 +156,44 @@ export class PinnedItem extends PureComponent {
 
   render() {
     //console.log("PinnedItem render");
-  	let ref_url = this.props.featureProps["Reference URL"];
-    let contentdm_number = ref_url.slice(ref_url.lastIndexOf("/")+1);
-    let re = /\/collection\/(.*)\/id/;
-    let cdm_collection = ref_url.match(re)[1];
+    const contentdm_number = this.props.featureProps["cdmn"];
+    const cdm_collection = this.props.featureProps["cdmco"];
+    const unpin_id = nanoid();
+    const is_bouncing = this.state.is_bouncing;
     let thumbnail_url = Config.thumbnail_url.replace("{{contentdm_number}}", contentdm_number)
                                             .replace("{{cdm_collection}}", cdm_collection);
     
     return (
-         <button onMouseOver={this.onMouseOver} 
-              onMouseOut={this.onMouseOut} 
+         <button  
+              
               className="pinned-item flexlist">
             <div className="unpin-item-wrapper">
-              <input type="checkbox" checked name="unpin-item" onChange={this.onClick}/>
+              <label htmlFor={unpin_id} 
+                      onMouseEnter={this.onMouseEnter} 
+                      onMouseLeave={this.onMouseLeave} >
+
+                <FontAwesomeIcon 
+                  icon={faThumbtack} 
+                  size='xl' 
+                  bounce={is_bouncing}/>
+                <input class="unpin-checkbox" 
+                        type="checkbox" 
+                        id={unpin_id} 
+                        checked 
+                        name="unpin-item" 
+                        onChange={this.onClick}/>
+              </label>
             </div>
             <div onClick={this.openModal} className="modal-trigger-wrapper">
-                <p>{this.props.featureProps.Title.length >= 75 ? 
-                      this.props.featureProps.Title.slice(0,75) + 
-                      "...": this.props.featureProps.Title}</p>
-                <p>{this.props.featureProps["Date Issued"] }</p>             
+                <p>{this.props.featureProps.title.length >= 75 ? 
+                      this.props.featureProps.title.slice(0,75) + 
+                      "...": this.props.featureProps.title}</p>         
                 <div className="thumbnail-background">
                   <CircleLoader color={'#ff6600'} 
                                 loading={this.state.thumbnailLoading}/>
                   <img className="feature-thumbnail" 
                       onLoad={this.onThumbnailLoad} 
-                      alt={"thumbnail image for " + this.props.featureProps.Title}
+                      alt={"thumbnail image for " + this.props.featureProps.title}
                       src={thumbnail_url}
                     />
                 </div>                

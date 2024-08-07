@@ -1,4 +1,4 @@
-import './wdyr.js';
+//import './wdyr.js';
 import React from 'react';
 import {
     createBrowserRouter,
@@ -6,14 +6,21 @@ import {
   } from "react-router-dom";
 import { createRoot } from 'react-dom/client';
 import './index.css';
+import ErrorPage from './error.jsx';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 
 const router = createBrowserRouter([
     {
       path: "/mapsok",
-      element: <App/ >,
-    },
+      element: <App/ >
+      // children: [
+      //   {
+      //     path:":cdmcol/:cdmn",
+      //     element: 
+      //   }
+      // ]
+    }
   ]);
 const container = document.getElementById('root');
 const root = createRoot(container);

@@ -113,6 +113,9 @@ Modal animations
   z-index: 1000;
 }
 
+div.modal-loader-div {
+  padding-bottom:70px;
+}
 /* .Modal-Content {
   position: absolute;
   top: 5%;
@@ -149,8 +152,8 @@ Modal animations
     background: none;
     border: none;
     font-size: 1.2em;
-    top: 5px;
-    right: 5px;
+    top: 0;
+    right: 0;
   }
 
   button.modalCloseButton:hover {

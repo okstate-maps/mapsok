@@ -18,19 +18,22 @@
 .Sidebar-controls {
   height:50px;
   width:100%;
-  background-color: red;
   position: relative;
   top: 0;
+  display:flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.Sidebar-controls div {
+  padding:3px;
 }
 
 .Sidebar-pinned-features.flexlist {
   flex-basis: 0;  
 }
 
-.pinned-item.flexlist {
-  flex-direction: row;
-  background-color: tomato;
-}
 
 .Sidebar-search-results {
   /* position: absolute;*/
@@ -41,6 +44,7 @@
   overflow-y: scroll;
   overflow-x: hidden;
   flex-grow:1;
+
 }
 
 div.try-searching-text-container {
