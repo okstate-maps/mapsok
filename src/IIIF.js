@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import L from 'leaflet';
+
 import 'leaflet-iiif';
-import { Vault } from '@iiif/vault';
+import { Vault } from '@iiif/helpers/vault';
 import Config from './Config';
-import { LeafletConsumer } from 'react-leaflet';
+
 
 export function iiifConstructManifestUrl (contentdm_number, cdm_collection) {
   const cdm_num = contentdm_number;
@@ -27,6 +28,7 @@ export function iiifConstructImageUrl (contentdm_number, cdm_collection) {
 
 export function iiifRequestManifest (url){
   const vault = new Vault();
+  console.log("Requesting IIIF Manifest: ", url);
   return vault.loadManifest(url);
 }
 

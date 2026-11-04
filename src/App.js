@@ -1,3 +1,5 @@
+'use client';
+
 import React, { PureComponent } from 'react';
 //import {css, jsx} from '@emotion/react';
 import BounceLoader from 'react-spinners/BounceLoader';
@@ -10,7 +12,6 @@ import Config from './Config';
 import MapView from './MapView';
 import Sidebar from './Sidebar';
 import {findWithAttr} from './Util';
-import './App.css';
 import { GeojsonContext } from './Contexts';
 import * as geojson from './data_mcc_okmaps.json';
 

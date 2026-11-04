@@ -4,8 +4,6 @@ import React, { createRef, Component, useState,
 import Config from './Config';
 import axios from 'axios';
 import L from 'leaflet'; //
-import './leaflet.css';
-import './leaflet.draw.css';
 
 import {
   MapContainer, 
@@ -22,7 +20,6 @@ import Control from './Control.tsx';
 import { DynamicMapLayer } from 'react-esri-leaflet';
 import VectorBasemapLayer from 'react-esri-leaflet/plugins/VectorBasemapLayer';
 import VectorTileLayer from 'react-esri-leaflet/plugins/VectorTileLayer';
-import './MapView.css';
 import { GeojsonContext, SearchContext } from './Contexts';
 import MapSearch from './MapSearch';
 import { nanoid } from 'nanoid';
@@ -30,7 +27,7 @@ import _ from 'lodash';
 
 
 //const { Map, TileLayer, Marker, Popup } = ReactLeaflet
-const templater = function(strings, ...keys) {}
+const templater = function(strings, ...keys) {};
 
 const DrawComponent = memo(function DrawComponent(props) {
   const map = useMap();
@@ -396,12 +393,13 @@ function MapView(props) {
                 <Control className='toggle-search-control leaflet-bar' position='topleft'>
                   <ToggleSearchControl toggleRedoSearchOnMapMove={toggleRedoSearchOnMapMove} />
                 </Control>
+                 
                 <LayersControl collapsed={false} position="topright">
                   <LayersControl.BaseLayer checked name="Topographic">
-                    <VectorBasemapLayer apiKey={Config.arcgisAPIkey} checked name="ArcGIS:Topographic" /> 
+                    <VectorBasemapLayer apiKey={Config.arcgisAPIkey} checked name="arcgis/topographic" /> 
                   </LayersControl.BaseLayer>
                   <LayersControl.BaseLayer name="Imagery">
-                    <VectorBasemapLayer apikey={Config.arcgisAPIkey} name="ArcGIS:Imagery" />                    
+                    <VectorBasemapLayer apikey={Config.arcgisAPIkey} name="arcgis/imagery" />                    
                   </LayersControl.BaseLayer>
                   <LayersControl.Overlay name="OK Counties">
                       <VectorTileLayer apikey={Config.arcgisAPIkey} url={ok_counties}/>
@@ -411,7 +409,6 @@ function MapView(props) {
                   </LayersControl.Overlay>
                 </LayersControl>
                   <DrawComponent executeSpatialSearch={props.executeSpatialSearch}/>
-                
                 {debug_boxes}
                 {rectangle}
                 {pinned_geojson}

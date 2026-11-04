@@ -1,0 +1,512 @@
+/*
+ * Default, the Viewer's own layout: Clover 3.x's Viewer. Title and actions over the Body;
+ * the thumbnail strip under the Body, headed by the view's page titles and the position;
+ * the information panel to the right of all three, the layout's full height.
+ *
+ * On the scale: the header, the strip, the panel and the picture are regions, each
+ * `--clover-inset` (`l`) inside all round (their own space, so nothing around them needs
+ * a margin); a region's parts `m` apart (the header's title and actions, the strip's
+ * header and thumbnails); the strip's titles and position, within its header, `s`.
+ */
+.clover-template-modal {
+  --clover-body-height: min(65vh, 40rem);
+  display: flex;
+  flex-direction: column;
+  color: var(--clover-color-primary, #1a1d1e);
+}
+
+/*
+ * Of the window's smallest height (`svh`), where a browser knows it: a phone's `vh` is
+ * the window with its toolbars away, so a Body of it ran on under them while they show.
+ */
+@supports (height: 1svh) {
+  .clover-template-modal {
+    --clover-body-height: min(65svh, 40rem);
+  }
+}
+
+/*
+ * `fill`: as tall as the box it sits in, and the Body takes what the header and the strip
+ * leave (flex, rather than `--clover-body-height`), so the layout never runs below it.
+ * Never a Body under 16rem, the width it keeps beside the panel: in a box too short for
+ * that, the layout grows past the box, for the box to scroll. Full screen, the Viewer
+ * fills the screen so (`lib/fullscreen.ts`).
+ */
+.clover-template-modal:is([data-fill], :fullscreen) {
+  --clover-body-height: auto;
+  height: 100%;
+  min-height: min-content;
+}
+
+.clover-template-modal:is([data-fill], :fullscreen)
+  > .clover-template-modal-panes {
+  flex: 1 1 auto;
+}
+
+.clover-template-modal:is([data-fill], :fullscreen)
+  .clover-template-modal-body {
+  flex: 1 1 0;
+  min-height: 16rem;
+}
+
+.clover-template-modal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--clover-space-s);
+  padding: var(--clover-inset);
+}
+
+/*
+ * On a small screen (under 31rem, a phone's), the header and the strip (below) are `m`
+ * inside, so their edges stay in line with the Body's controls, which step there
+ * (`Canvas.css`; Mat, 2026-10-31).
+ */
+@media (width < 31rem) {
+  .clover-template-modal-header,
+  .clover-template-modal-rail {
+    --clover-inset: var(--clover-space-m);
+  }
+}
+
+/*
+ * The header's pagers, small (`size="small"`): a content state's targets' after the
+ * title, in its line, right after it on one baseline; on a line too short for both, under
+ * the title, rather than past the header's inset (WCAG 1.4.10).
+ */
+.clover-template-modal-pager {
+  flex: none;
+  padding-block: 0;
+}
+
+.clover-template-modal-header:has(> .clover-template-modal-pager) {
+  flex-wrap: wrap;
+  row-gap: var(--clover-space-xs);
+}
+
+.clover-template-modal-header:has(> .clover-template-modal-pager)
+  > :is(.clover-template-modal-title, .clover-template-modal-pager) {
+  align-self: last baseline;
+}
+
+/*
+ * Opened on a Collection: under the title, `xs` below it, a line of the Collection's
+ * own, its title, muted, at the page's size, then its members' pager, `s` after it (under
+ * it on a line too short for both); the provider's logo at the end, beside both lines,
+ * its foot on the Collection's line's (Mat, 2026-10-29: "bottom align").
+ */
+.clover-template-modal-header:has(> .clover-template-modal-collection-row) {
+  display: grid;
+  /* The logo's share as on one line: as wide as it is, at most 38.2%. */
+  grid-template-columns: minmax(0, 1fr) fit-content(38.2%);
+  row-gap: var(--clover-space-xs);
+}
+
+.clover-template-modal-header
+  > :is(
+    .clover-template-modal-title,
+    .clover-template-modal-collection-row
+  ) {
+  grid-column: 1;
+}
+
+.clover-template-modal-header:has(> .clover-template-modal-collection-row)
+  > .clover-template-modal-provider {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: end;
+  max-width: none;
+}
+
+.clover-template-modal-collection-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--clover-space-xs) var(--clover-space-s);
+  min-width: 0;
+}
+
+.clover-template-modal-collection {
+  min-width: 0;
+  margin: 0;
+  /* Wrapped, as the title is: a Collection's name may be one long word too. */
+  overflow-wrap: anywhere;
+  color: var(--clover-color-primary-muted, #26292b);
+  /* The page's own size, `1rem` where the page sets none (Mat, 2026-10-29). */
+  font-size: inherit;
+}
+
+/*
+ * The provider's logo (`Clover.Provider` around a `Clover.Logo`) at the end of the title's
+ * line; on a narrow line it gives way, drawn smaller within its share, rather than push
+ * the title out.
+ */
+.clover-template-modal-provider {
+  flex: 0 1 auto;
+  max-width: 38.2%;
+  margin-inline-start: auto;
+}
+
+/*
+ * Narrower, the header collapses by the layout's own width (Mat, 2026-10-31: "a better
+ * job of collapsing this header … tuck the logo away at a certain width"). Under 36rem,
+ * the logo keeps to the title's line, at its end, and the Collection's line runs the
+ * whole width under both, so its title is not squeezed beside the logo.
+ */
+@container clover-template-modal-main (width < 36rem) {
+  .clover-template-modal-header:has(> .clover-template-modal-collection-row)
+    > .clover-template-modal-provider {
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .clover-template-modal-header > .clover-template-modal-collection-row {
+    grid-column: 1 / -1;
+  }
+}
+
+/*
+ * Under 26rem (a phone, or a narrow column beside the panel), the logo is tucked away,
+ * so the title and the Collection's line have the whole width: the panel's About shows
+ * it still, its name and its link, one press away. With no panel, or a panel whose
+ * sections leave About out (`data-about`), nothing else shows it, so it keeps to the
+ * title's line.
+ */
+@container clover-template-modal-main (width < 26rem) {
+  .clover-template-modal:has(.clover-template-modal-panel[data-about])
+    .clover-template-modal-provider {
+    display: none;
+  }
+}
+
+/* A `Clover.Split`: the main pane (header, Body, strip), the bar, and the panel's pane. */
+.clover-template-modal-panes {
+  position: relative;
+}
+
+/* Its own width, as a container, decides how its header collapses (above). */
+.clover-template-modal-main {
+  display: flex;
+  flex-direction: column;
+  container: clover-template-modal-main / inline-size;
+}
+
+/*
+ * What floats over it lies over everything in it (Mat, 2026-10-31: the header's pager,
+ * `z-index: 5`, drew over the panel): while the panel floats, it is a stacking context of
+ * its own, so nothing a part raises inside it reaches over the panel or its wash. Only
+ * then: docked, a list the page opens (the pager's) still reaches over the bar beside it.
+ * (A container is no stacking context: `container-type` contains no layout.)
+ */
+.clover-template-panes[data-panel="over"] > .clover-template-modal-main {
+  isolation: isolate;
+}
+
+/*
+ * The information panel, every template's (`shared/PanelPane.tsx`), written once here, in
+ * `styles.css`. Beside the rest, in its own space, when there is room for both (the
+ * template measures its own width): its width the split's, 24rem to start, then wherever
+ * its bar is dragged; its height the Split's, however long its sections run: size
+ * containment keeps its content from making the row taller, and it scrolls within.
+ */
+.clover-template-panes {
+  position: relative;
+}
+
+.clover-template-panel {
+  contain: size;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: var(--clover-color-secondary, #fff);
+}
+
+.clover-template-panel[hidden] {
+  display: none;
+}
+
+/*
+ * Its bar lies over the Body's edge, centered on it (Mat, 2026-10-26: "overlap the body
+ * slightly … even on both sides"): drawn back half its width toward the main pane, so the
+ * bar and its grip (6px, centered on the bar) are both 3px over each side, and stay
+ * aligned as they light. A transform, so neither pane's size moves; its area to grab
+ * moves with it.
+ */
+.clover-template-panes > .clover-template-panel-handle {
+  translate: -1.5px 0;
+}
+
+.clover-template-panes:dir(rtl) > .clover-template-panel-handle {
+  translate: 1.5px 0;
+}
+
+/*
+ * Items' strip keeps its rings' room inside the main pane on the handle's side (Mat,
+ * 2026-10-26: the bar "is overlaying content when inactive"): it reaches 4px past its
+ * box elsewhere, so a ring is never cut, and with the bar unseen at rest, that 4px and
+ * the shadow at the strip's end lay over the panel. Here the strip stops at the pane's
+ * edge and keeps the room as its padding, so nothing is cut, and its end shadow is at
+ * that edge. Physical sides, by the page's direction, not the book's (`dir` on the
+ * strip's frame is the book's).
+ */
+.clover-template-modal-panes:dir(ltr) .clover-items-viewport {
+  margin-right: 0;
+}
+
+.clover-template-modal-panes:dir(rtl) .clover-items-viewport {
+  margin-left: 0;
+}
+
+.clover-template-modal-panes:dir(ltr)
+  .clover-items
+  .clover-items-frame:not([dir="rtl"])::after,
+.clover-template-modal-panes:dir(ltr)
+  .clover-items
+  .clover-items-frame[dir="rtl"]::before {
+  right: 0;
+}
+
+.clover-template-modal-panes:dir(rtl)
+  .clover-items
+  .clover-items-frame:not([dir="rtl"])::before,
+.clover-template-modal-panes:dir(rtl)
+  .clover-items
+  .clover-items-frame[dir="rtl"]::after {
+  left: 0;
+}
+
+/*
+ * Over the Body, when there is not: it slides in from the end, never wider than the
+ * layout less a strip, so some of the page stays in sight and a click there closes it.
+ * Document's panel too, and the wash beside it (`clover-template-panes`, `-drawer` and
+ * `-scrim`, which both templates set): written once, here, in `styles.css`.
+ */
+/* The panel waits off the end while it slides: never a sideways scroll for the page. */
+.clover-template-panes[data-panel="over"] {
+  overflow: clip;
+}
+
+.clover-template-panes[data-panel="over"] > .clover-template-drawer {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 4;
+  width: min(24rem, calc(100% - var(--clover-space-2xl)));
+  max-width: none;
+  max-height: none;
+  border-inline-start: 1px solid var(--clover-color-secondary-muted, #e6e8eb);
+  /* At the page's end, its inner edge on the left (below), the right right to left. */
+  --clover-template-inner: left;
+  --clover-template-toward: -1;
+  /*
+   * Where it waits, off its edge: `xl` past it, so its close button, mostly over the page,
+   * and its shadow go out of sight with it, rather than linger at the layout's edge until
+   * it is hidden. A drag let go goes there too (`dragToClose.ts`), so the two meet.
+   */
+  --clover-template-out: translateX(calc(100% + var(--clover-space-xl)));
+  transform: var(--clover-template-out);
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clover-template-panes[data-panel="over"] > .clover-template-drawer:dir(rtl) {
+  --clover-template-out: translateX(calc(-100% - var(--clover-space-xl)));
+  --clover-template-inner: right;
+  --clover-template-toward: 1;
+}
+
+/*
+ * A pane over the page (the panel, and Document's thumbnails on a narrow page, which set
+ * `clover-template-float` while they float), written once: its inner edge, the one
+ * toward the page, carries a grip that says it can be dragged back off
+ * (`useDragToClose`), 3px wide and no taller than a control (Mat, 2026-10-31: the close
+ * button's height), and its shadow falls on the page. A sideways drag is its own, not
+ * the page's; up and down still scroll it. Which edge is inner each pane says, by its
+ * side and the page's direction: `--clover-template-inner` (`left` or `right`), and its
+ * shadow's way along the row, `--clover-template-toward` (-1 or 1).
+ */
+.clover-template-panes[data-panel="over"] > .clover-template-drawer,
+.clover-template-float {
+  --clover-grip: color-mix(
+    in srgb,
+    var(--clover-color-primary-muted, #26292b) 30%,
+    transparent
+  );
+  background:
+    linear-gradient(var(--clover-grip), var(--clover-grip)) no-repeat
+      var(--clover-template-inner) var(--clover-space-2xs) center / 3px
+      var(--clover-control),
+    var(--clover-color-secondary, #fff);
+  touch-action: pan-y;
+  box-shadow: calc(var(--clover-template-toward) * var(--clover-space-s)) 0
+    var(--clover-space-l) rgb(0 0 0 / 0.12);
+}
+
+.clover-template-panes[data-panel="over"]
+  > .clover-template-drawer[data-open="true"] {
+  transform: none;
+}
+
+.clover-template-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background-color: rgb(0 0 0 / 0.2);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 240ms ease;
+}
+
+.clover-template-scrim[data-open="true"] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clover-template-panes[data-panel="over"] > .clover-template-drawer,
+  .clover-template-scrim {
+    transition: none;
+  }
+}
+
+/*
+ * The strip under the Body, as 3.x's: its header carries the view's titles and "2 / 9".
+ * A region of its own, as the header is: the inset inside all around, its header `m` over
+ * the thumbnails.
+ */
+.clover-template-modal-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--clover-space-m);
+  padding: var(--clover-inset);
+}
+
+/*
+ * The thumbnails run on past the strip's end padding to the pane's edge, as the Body
+ * does, so a thumbnail cut there reads as more to come rather than a margin.
+ */
+.clover-template-modal-rail > .clover-items {
+  margin-inline-end: calc(-1 * var(--clover-inset));
+}
+
+/* Already at the pane's edge: no ring room past it. */
+.clover-template-modal-rail .clover-items-viewport {
+  margin-inline-end: 0;
+}
+
+/*
+ * The strip's arrows line up with what is above them. The left one sits `s` past the
+ * line the titles start on, the strip's own edge; the right one under the Body's
+ * controls, the inset in from the pane's edge, as the cluster is. In a right-to-left book they
+ * swap: Next on the left, Previous on the right.
+ */
+.clover-template-modal-rail
+  .clover-items-frame:not([dir="rtl"])
+  > button.clover-items-scroll-prev,
+.clover-template-modal-rail
+  .clover-items-frame[dir="rtl"]
+  > button.clover-items-scroll-next {
+  left: calc(-1 * var(--clover-space-s));
+}
+
+.clover-template-modal-rail
+  .clover-items-frame:not([dir="rtl"])
+  > button.clover-items-scroll-next,
+.clover-template-modal-rail
+  .clover-items-frame[dir="rtl"]
+  > button.clover-items-scroll-prev {
+  right: var(--clover-inset);
+}
+
+/* One view: no position, arrows or thumbnails to show, so no strip and no gap. */
+.clover-template-modal-rail:not(:has(.clover-items, .clover-pager-position)) {
+  display: none;
+}
+
+/* The view's titles in the page's own size, and the position a step under it (`s`). */
+.clover-template-modal-rail-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--clover-space-s);
+}
+
+/*
+ * The view's titles at the start, as a line of text that wraps: a long title, or a
+ * reader's text spacing, gives the header another line rather than cutting a title short
+ * (WCAG 1.4.12). A spread's two have a dot between them, `xs` either side.
+ */
+.clover-template-modal-titles {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.clover-template-modal-titles > .clover-template-modal-titles-dot {
+  margin-inline: var(--clover-space-xs);
+  color: var(--clover-color-primary-muted, #26292b);
+}
+
+/* The position at the end. */
+.clover-template-modal-rail-header .clover-pager-position {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  font-size: var(--clover-text-s);
+}
+
+/*
+ * Open beside the Body, the panel's toggle sits on the bar between them, its spine
+ * (`PanelPane`, every template's): a box of no width in the Split's row, right after the
+ * bar, which the toggle hangs from, centered on the bar (half its 3px back) and level
+ * with the Body's controls (their inset, `--clover-inset`, down from the Body's top,
+ * `useSpineTop`). In the row, it moves with the bar as it is dragged, and reads right to
+ * left with the page. Over what floats over a narrow page (Document's thumbnails) and the
+ * wash beside it.
+ */
+.clover-template-spine {
+  position: relative;
+  z-index: 4;
+  flex: none;
+  width: 0;
+}
+
+.clover-template-spine > * {
+  position: absolute;
+  top: calc(var(--clover-template-spine-top, 0px) + var(--clover-inset));
+  inset-inline-start: -1.5px;
+  translate: -50%;
+}
+
+/*
+ * Hanging over the Body by half its width less half the bar's, it ends a Canvas's row
+ * there, `xs` short of it, as the toggle in the row would (`Canvas.css`), so the deck of
+ * the view's controls stands as near it, panel open or closed (Mat, 2026-11-01: "do the
+ * same for when panel is expanded. always have the same gap").
+ */
+.clover-template-panes:has(> .clover-template-spine)
+  > :first-child
+  .clover-canvas
+  > .clover-canvas-controls[data-fit] {
+  inset-inline-end: calc(
+    var(--clover-control) / 2 - 1.5px + var(--clover-space-xs)
+  );
+}
+
+/*
+ * Its place goes where it is measured at once, never sliding there (Mat, 2026-11-01:
+ * "jarring for the eye"): the round controls ease `all` (`ui/Button.css`, outweighing a
+ * class alone), which took in `top`, so on a first load it slid down the bar to the
+ * Body's top. Its colors still ease.
+ */
+.clover-template-panes .clover-template-spine > * {
+  transition-property: background-color, color, outline-color;
+}
+
+/*
+ * Before the Root has anything to show (`idle`), what is over the Body is empty and the
+ * Body's top is not where it will be: the toggle waits unseen, then shows level with the
+ * Body once the resource fills the layout, rather than drop as it fills.
+ */
+.clover-root[data-status="idle"] .clover-template-spine {
+  visibility: hidden;
+}
+
+.clover-template-spine:dir(rtl) > * {
+  translate: 50%;
+}

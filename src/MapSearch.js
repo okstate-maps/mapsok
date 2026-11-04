@@ -1,12 +1,13 @@
 import { useContext } from 'react';
 // turf imports (rather than importing the whole deal)
-  import bboxPolygon from '@turf/bbox-polygon';
+  import {bboxPolygon} from '@turf/bbox-polygon';
   import { featureEach } from '@turf/meta';
-  import center from '@turf/center';
-  import intersect from '@turf/intersect';
-  import booleanIntersects from '@turf/boolean-intersects';
-  import distance from '@turf/distance';
-  import area from '@turf/area';
+  import {center} from '@turf/center';
+  import {intersect} from '@turf/intersect';
+  import {booleanIntersects} from '@turf/boolean-intersects';
+  import {distance} from '@turf/distance';
+  import {area} from '@turf/area';
+  import {featureCollection} from '@turf/helpers';
 
 import { nanoid } from 'nanoid';
 import Config from './Config';
@@ -23,7 +24,7 @@ export function MapSearch(bbox_str, geojson) {
 
   const bboxStringToPolygon = (bbox_str) => {
     let a = bbox_str.split(",");
-    let bbox_array = [a[0],a[1], a[2],a[3]];
+    let bbox_array = [ parseFloat(a[0]), parseFloat(a[1]), parseFloat(a[2]), parseFloat(a[3]) ];
     return bboxPolygon(bbox_array);
   }
   let bbox_polygon = bboxStringToPolygon(bbox_str);
@@ -32,10 +33,11 @@ export function MapSearch(bbox_str, geojson) {
   featureEach(bboxes, function (feat, index){
     let sim_score, sim_score2;
     let intersection_area, union_area, feat_area, feat_center, bbox_area;
+        
     let bbox_center = center(bbox_polygon);
 
     if (bbox_polygon && booleanIntersects(bbox_polygon, feat)) {
-        let intersection= intersect(bbox_polygon, feat);
+        let intersection= intersect(featureCollection([bbox_polygon,feat]));
         feat_center = center(feat);
         let center_distance = distance(bbox_center, feat_center);
 

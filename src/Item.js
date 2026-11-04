@@ -5,7 +5,6 @@ import { faSquare } from '@fortawesome/free-regular-svg-icons';
 
 import CircleLoader from 'react-spinners/CircleLoader';
 import Config from './Config';
-import './Item.css';
 import { nanoid } from 'nanoid';
 
 //const element = 
@@ -176,7 +175,7 @@ export class PinnedItem extends PureComponent {
                   icon={faThumbtack} 
                   size='xl' 
                   bounce={is_bouncing}/>
-                <input class="unpin-checkbox" 
+                <input className="unpin-checkbox" 
                         type="checkbox" 
                         id={unpin_id} 
                         checked 

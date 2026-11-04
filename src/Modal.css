@@ -89,7 +89,7 @@ Modal animations
     }
   
   .ReactModalPortal div {
-      z-index: 10000;
+      z-index: 800001;
   }
 
   .ReactModalPortal div > .osrv-top-row-wrapper, 
@@ -169,4 +169,7 @@ div.modal-loader-div {
 
   span.metadataLabel {
     font-weight: bold;
+  }
+  div.clover-root div h3.clover-sections-heading {
+    z-index: 1000000;
   }

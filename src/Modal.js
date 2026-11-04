@@ -1,14 +1,12 @@
 import React from 'react';
 import ReactModal from 'react-modal';
 import ClipLoader from 'react-spinners/SyncLoader';
-import ShowMoreText from "react-show-more-text";
+//import ShowMoreText from "react-show-more-text";
 import { nanoid } from 'nanoid';
-import { OpenSeadragonViewer } from "openseadragon-react-viewer";
+//import { OpenSeadragonViewer } from "openseadragon-react-viewer";
 import {iiifConstructManifestUrl, 
         //iiifConstructImageUrl, 
         iiifRequestManifest} from './IIIF';
-import './Item.css';
-import './Modal.css';
 //import {css, jsx} from '@emotion/react';
 //import Config from './Config';
 //import axios from 'axios';
@@ -16,6 +14,10 @@ import './Modal.css';
 //import { MapContainer } from 'react-leaflet';
 //import { IIIFLayer, FullscreenControl } from './react-leaflet-iiif';
 //import CloverIIIF from "@samvera/clover-iiif";
+import Viewer from "@nulib/clover";
+import * as Clover from "@nulib/clover";
+import { CloverModalTemplate } from './CloverModalTemplate';
+import "@nulib/clover/styles.css";
 
 
 
@@ -112,39 +114,7 @@ class Modal extends React.PureComponent {
       
     // }
     let content = <div id='modalContent'>
-                    {/* <CloverIIIF id={manifest_id} options={options}/> */}
- 
-                    <OpenSeadragonViewer 
-                        manifestUrl={manifest_id}
-                        options={{
-                          height:500,
-                          deepLinking: false
-                        }} 
-                        openSeadragonOptions={{
-                          ajaxWithCredentials:false,
-                          gestureSettingsMouse: {
-                            scrollToZoom: true
-                          },
-                          navigatorHeight: "133px",
-                          navigatorWidth: "173px"
-                        }}                    
-                       />
-
-                    {/* <MapContainer className="modalMap" center={[0,0]} zoom='0' crs={L.CRS.Simple}>
-                      <IIIFLayer url={iiifConstructImageUrl(modalInfo.modalCollectionId, 
-                                              modalInfo.modalCollection)}/>
-                      <FullscreenControl />
-                    </MapContainer> */}
-
-                    <ul className="metadataList">
-                      {manifest_metadata.map(item => (
-                        <li className="metadataPair" key={nanoid()}>
-                          <span className="metadataLabel">{item.label.none[0] + ": "}</span>
-                          <ShowMoreText className="metadataValue">{item.value.none[0]}</ShowMoreText> 
-                        </li>
-                      ))}
-                    </ul>
-                    
+      <Viewer iiifContent={manifest_id} template={CloverModalTemplate} />
                   </div>;
     return content;
   }

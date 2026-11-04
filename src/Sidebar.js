@@ -8,7 +8,6 @@ import Config from './Config';
 import { TextSearch } from './TextSearch';
 import { Item, PinnedItem } from './Item';
 import { findWithAttr } from './Util';
-import './Sidebar.css';
 
 
 class Sidebar extends Component {
