@@ -1,206 +1,161 @@
-import React, { PureComponent } from 'react';
+import React, { memo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faThumbtack, faCheckSquare } from '@fortawesome/free-solid-svg-icons';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
-
 import CircleLoader from 'react-spinners/CircleLoader';
 import Config from './Config';
 import { nanoid } from 'nanoid';
 
-//const element = 
+export const Item = memo(function Item(props) {
+  const [thumbnailLoading, setThumbnailLoading] = useState(true);
+  const [, setPinning] = useState(false);
 
-
-export class Item extends PureComponent {
-  //static whyDidYouRender = true;
-
-  constructor(props) {
-    super(props);
-    this.openModal = this.openModal.bind(this);
-    this.onMouseEnter = this.onMouseEnter.bind(this);
-    this.onMouseLeave = this.onMouseLeave.bind(this);
-    this.onChange = this.onChange.bind(this);
-    this.onThumbnailLoad = this.onThumbnailLoad.bind(this);
-    this.onThumbnailError = this.onThumbnailError.bind(this);
-    this.state = {"thumbnailLoading": true,
-                  "pinning": false};
-  }
-
-  openModal() {
+  function openModal() {
     console.log("openModal");
-  	this.props.openModal(this.props.featureProps);
+    props.openModal(props.featureProps);
   }
 
-  onChange(e) {
-    console.log("Item::onChange::Pinning : ", this.props);
-    //console.log("onChange", this);
-    //console.log(this.props);
-    this.setState({"pinning": e.currentTarget.checked});
-    this.props.handleItemPinning({
+  function onChange(e) {
+    console.log("Item::onChange::Pinning : ", props);
+    setPinning(e.currentTarget.checked);
+    props.handleItemPinning({
       "type": "Feature",
-      "geometry": this.props.featureGeom, 
-      "properties": this.props.featureProps,
-      "id": this.props.id,
+      "geometry": props.featureGeom,
+      "properties": props.featureProps,
+      "id": props.id,
       "key": nanoid(),
       "isPinned": e.currentTarget.checked
     });
   }
 
-  onMouseEnter() {
-    let geom = this.props.featureGeom;
-    this.props.onItemMouseOver(geom);
+  function onMouseEnter() {
+    props.onItemMouseOver(props.featureGeom);
   }
 
-  onMouseLeave() {
-  	this.props.onItemMouseOut();
+  function onMouseLeave() {
+    props.onItemMouseOut();
   }
 
-  onThumbnailLoad() {
-    this.setState({"thumbnailLoading": false});
+  function onThumbnailLoad() {
+    setThumbnailLoading(false);
   }
 
-  onThumbnailError() {
-    this.setState({"thumbnailLoading": false});
+  function onThumbnailError() {
+    setThumbnailLoading(false);
   }
 
-  render() {
-    //console.log("item render");
-    //console.log(this.props);
-  	//let ref_url = this.props.featureProps["Reference URL"];
-    let contentdm_number = this.props.featureProps["cdmn"];
-    let cdm_collection = this.props.featureProps["cdmco"];
-    let thumbnail_url = Config.thumbnail_url.replace("{{contentdm_number}}", contentdm_number)
+  const contentdm_number = props.featureProps["cdmn"];
+  const cdm_collection = props.featureProps["cdmco"];
+  const thumbnail_url = Config.thumbnail_url.replace("{{contentdm_number}}", contentdm_number)
                                             .replace("{{cdm_collection}}", cdm_collection);
-    let pin_item_id = nanoid();
-    
+  const pin_item_id = nanoid();
 
-    return (
-         <button onMouseEnter={this.onMouseEnter} 
-              onMouseLeave={this.onMouseLeave} 
+  return (
+         <button onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
               className="item flexlist">
             <div className="pin-item-wrapper">
               <label htmlFor={pin_item_id}>
-                <FontAwesomeIcon 
-                  icon={this.props.isPinned ? faCheckSquare : faSquare} 
+                <FontAwesomeIcon
+                  icon={props.isPinned ? faCheckSquare : faSquare}
                   size='xl' />
-              <input name="pin-item" 
+              <input name="pin-item"
                      className="pin-checkbox"
                      id={pin_item_id}
-                     onChange={this.onChange} 
-                     type="checkbox" 
-                     checked={this.props.isPinned} />
+                     onChange={onChange}
+                     type="checkbox"
+                     checked={props.isPinned} />
                      </label>
             </div>
-            <div onClick={this.openModal} className="modal-trigger-wrapper">
-                <p className="item-title-long">{this.props.featureProps.title.length >= 75 ? this.props.featureProps.title.slice(0,75)+ "...": this.props.featureProps.title}</p>
-                <p className="item-title-short">{this.props.featureProps.title.length >= 25 ? this.props.featureProps.title.slice(0,25)+ "...": this.props.featureProps.title}</p>
+            <div onClick={openModal} className="modal-trigger-wrapper">
+                <p className="item-title-long">{props.featureProps.title.length >= 75 ? props.featureProps.title.slice(0,75)+ "...": props.featureProps.title}</p>
+                <p className="item-title-short">{props.featureProps.title.length >= 25 ? props.featureProps.title.slice(0,25)+ "...": props.featureProps.title}</p>
                 <div className="thumbnail-background">
-                  <CircleLoader color={'#ff6600'} loading={this.state.thumbnailLoading}/>
-                  <img className="feature-thumbnail" 
-                      onLoad={this.onThumbnailLoad} 
-                      onError={this.onThumbnailError}
+                  <CircleLoader color={'#ff6600'} loading={thumbnailLoading}/>
+                  <img className="feature-thumbnail"
+                      onLoad={onThumbnailLoad}
+                      onError={onThumbnailError}
                       loading="lazy"
-                      alt={"thumbnail image for " + this.props.featureProps.title}
+                      alt={"thumbnail image for " + props.featureProps.title}
                       src={thumbnail_url}
                     />
-                </div>                 
+                </div>
             </div>
           </button>
-    );
-  }
-}
+  );
+});
 
 
-export class PinnedItem extends PureComponent {
-  //static whyDidYouRender = true;
+export const PinnedItem = memo(function PinnedItem(props) {
+  const [thumbnailLoading, setThumbnailLoading] = useState(true);
+  const [is_bouncing, setIsBouncing] = useState(false);
 
-  constructor(props) {
-    super(props);
-    this.openModal = this.openModal.bind(this);
-    this.onClick = this.onClick.bind(this);
-    this.onThumbnailLoad = this.onThumbnailLoad.bind(this);
-    this.onMouseEnter = this.onMouseEnter.bind(this);
-    this.onMouseLeave = this.onMouseLeave.bind(this);
-    this.state = {"thumbnailLoading": true,
-                  "is_bouncing": false}
-  }
-
-  openModal() {
+  function openModal() {
     console.log("openModal");
-  	this.props.openModal(this.props.featureProps);
+    props.openModal(props.featureProps);
   }
 
-  onClick(e) {
-    //console.log("onClick::unpin", this);
-    //debugger;
-    this.props.handleItemPinning({
-      "id": this.props.id
+  function onClick() {
+    props.handleItemPinning({
+      "id": props.id
     });
   }
 
-  onMouseEnter() {
-    //let geom = this.props.featureGeom;
-    //this.props.onItemMouseOver(geom);
-    this.setState({is_bouncing: true});
+  function onMouseEnter() {
+    setIsBouncing(true);
   }
 
-  onMouseLeave() {
-  	//this.props.onItemMouseOut();
-    this.setState({is_bouncing: false});
-  
+  function onMouseLeave() {
+    setIsBouncing(false);
   }
 
-  onThumbnailLoad() {
-    this.setState({"thumbnailLoading": false});
+  function onThumbnailLoad() {
+    setThumbnailLoading(false);
   }
 
-  render() {
-    //console.log("PinnedItem render");
-    const contentdm_number = this.props.featureProps["cdmn"];
-    const cdm_collection = this.props.featureProps["cdmco"];
-    const unpin_id = nanoid();
-    const is_bouncing = this.state.is_bouncing;
-    let thumbnail_url = Config.thumbnail_url.replace("{{contentdm_number}}", contentdm_number)
+  const contentdm_number = props.featureProps["cdmn"];
+  const cdm_collection = props.featureProps["cdmco"];
+  const unpin_id = nanoid();
+  const thumbnail_url = Config.thumbnail_url.replace("{{contentdm_number}}", contentdm_number)
                                             .replace("{{cdm_collection}}", cdm_collection);
-    
-    return (
-         <button  
-              
+
+  return (
+         <button
               className="pinned-item flexlist">
             <div className="unpin-item-wrapper">
-              <label htmlFor={unpin_id} 
-                      onMouseEnter={this.onMouseEnter} 
-                      onMouseLeave={this.onMouseLeave} >
+              <label htmlFor={unpin_id}
+                      onMouseEnter={onMouseEnter}
+                      onMouseLeave={onMouseLeave} >
 
-                <FontAwesomeIcon 
-                  icon={faThumbtack} 
-                  size='xl' 
+                <FontAwesomeIcon
+                  icon={faThumbtack}
+                  size='xl'
                   bounce={is_bouncing}/>
-                <input className="unpin-checkbox" 
-                        type="checkbox" 
-                        id={unpin_id} 
-                        checked 
+                <input className="unpin-checkbox"
+                        type="checkbox"
+                        id={unpin_id}
+                        checked
                         name="unpin-item" 
-                        onChange={this.onClick}/>
+                        onChange={onClick}/>
               </label>
             </div>
-            <div onClick={this.openModal} className="modal-trigger-wrapper">
-                <p>{this.props.featureProps.title.length >= 75 ? 
-                      this.props.featureProps.title.slice(0,75) + 
-                      "...": this.props.featureProps.title}</p>         
+            <div onClick={openModal} className="modal-trigger-wrapper">
+                <p>{props.featureProps.title.length >= 75 ?
+                      props.featureProps.title.slice(0,75) +
+                      "...": props.featureProps.title}</p>
                 <div className="thumbnail-background">
-                  <CircleLoader color={'#ff6600'} 
-                                loading={this.state.thumbnailLoading}/>
-                  <img className="feature-thumbnail" 
-                      onLoad={this.onThumbnailLoad} 
-                      alt={"thumbnail image for " + this.props.featureProps.title}
+                  <CircleLoader color={'#ff6600'}
+                                loading={thumbnailLoading}/>
+                  <img className="feature-thumbnail"
+                      onLoad={onThumbnailLoad}
+                      alt={"thumbnail image for " + props.featureProps.title}
                       src={thumbnail_url}
                     />
-                </div>                
+                </div>
             </div>
           </button>
-    );
-  }
-}
+  );
+});
 
 
 export default Item;

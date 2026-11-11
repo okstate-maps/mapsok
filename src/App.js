@@ -1,6 +1,6 @@
 'use client';
 
-import React, { PureComponent } from 'react';
+import React, { memo, useCallback, useEffect, useState } from 'react';
 //import {css, jsx} from '@emotion/react';
 import BounceLoader from 'react-spinners/BounceLoader';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -17,219 +17,195 @@ import * as geojson from './data_mcc_okmaps.json';
 
 
 
-class App extends PureComponent {
-  //static whyDidYouRender = true;
-  constructor(props) {
-    super(props);
-    this.spinner_css = {
-      "position":"absolute",
-      "top":"50%",
-      "left":"50%",
-      "zIndex":"1000000",
-      "padding":"10px"
-    };
-    this.state = { "search_results": [],
-                   "base_features": [],
-                   "pinned_features": [],
-                   "modalIsOpen": false,
-                   "modalType": "Item",
-                   "hover_feature": false,
-                   "showSpinner": false,
-                  "collection_field_info": {} 
-                 };
-    this.executeSpatialSearch = this.executeSpatialSearch.bind(this);
-    this.updateSearchResults = this.updateSearchResults.bind(this);
+const spinnerCss = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  zIndex: "1000000",
+  padding: "10px"
+};
 
-    this.onItemMouseOver = this.onItemMouseOver.bind(this);
-    this.onItemMouseOut = this.onItemMouseOut.bind(this);
+function App() {
+  const [state, setState] = useState({
+    search_results: [],
+    base_features: [],
+    pinned_features: [],
+    modalIsOpen: false,
+    modalType: "Item",
+    hover_feature: false,
+    showSpinner: false,
+    collection_field_info: {}
+  });
 
-    this.openModal = this.openModal.bind(this);
-    this.closeModal = this.closeModal.bind(this);
-    this.toggleModal = this.toggleModal.bind(this);
-    this.toggleResetSidebar = this.toggleResetSidebar.bind(this);
-    this.toggleSpinner = this.toggleSpinner.bind(this);
-    this.handleItemPinning = this.handleItemPinning.bind(this);
-  }
-
-
-  openModal(modalContent){
+  const openModal = useCallback((modalContent) => {
     console.log("App::openModal");
-    this.setState({
+    setState((current) => ({
+      ...current,
       modalInfo: {
-                  modalCollection: modalContent["cdmco"],
-                  modalCollectionId: modalContent["cdmn"]
-                }
-    });
-    this.toggleModal(true);
-  }
+        modalCollection: modalContent["cdmco"],
+        modalCollectionId: modalContent["cdmn"]
+      },
+      modalIsOpen: true
+    }));
+  }, []);
 
-  closeModal(){
+  const closeModal = useCallback(() => {
     console.log("App::closeModal");
-    this.setState({
-      modalContent: ""
-    });
-    this.toggleModal(false);
-  }
+    setState((current) => ({
+      ...current,
+      modalContent: "",
+      modalIsOpen: false
+    }));
+  }, []);
 
-  updateSearchResults(results) {
+  const updateSearchResults = useCallback((results) => {
     console.log("App::updateSearchResults", results);
-    this.setState({search_results: results.data});
-  }
+    setState((current) => ({ ...current, search_results: results.data }));
+  }, []);
 
-  toggleResetSidebar(bool){
+  const toggleResetSidebar = useCallback((bool) => {
     console.log("toggleResetSidebar::" + bool);
-    this.setState({reset_sidebar: bool});
-  }
-  executeSpatialSearch(results){
+    setState((current) => ({ ...current, reset_sidebar: bool }));
+  }, []);
+
+  const executeSpatialSearch = useCallback((results) => {
     console.log("App::executeSpatialSearch");
     console.log(results);
-
     if (results) {
-      this.setState({showSpinner: true});
-      this.setState({search_results: results});
-      this.setState({reset_sidebar: true});
+      setState((current) => ({
+        ...current,
+        showSpinner: true,
+        search_results: results,
+        reset_sidebar: true
+      }));
     }
-    
-    this.setState({showSpinner: false});
-  }
+    setState((current) => ({ ...current, showSpinner: false }));
+  }, []);
   
-  onItemMouseOver(featureGeom) {
-    if (featureGeom !== this.state.hover_feature){
-      this.setState({hover_feature: featureGeom});
-    }
-  }  
+  const onItemMouseOver = useCallback((featureGeom) => {
+    setState((current) => (
+      featureGeom !== current.hover_feature
+        ? { ...current, hover_feature: featureGeom }
+        : current
+    ));
+  }, []);
 
-  onItemMouseOut() {
-    this.setState({hover_feature: false});
-  }
+  const onItemMouseOut = useCallback(() => {
+    setState((current) => ({ ...current, hover_feature: false }));
+  }, []);
 
-  componentDidUpdate(prevProps, prevState){
-    //console.log("App DidUpdate");
-    //console.log("componentDidUpdate: ", prevState);
-  }
-
-  componentDidMount(prevProps, prevState){
+  useEffect(() => {
     console.log("App::DidMount");
-    let colls = Config.collections;
-    let that = this;
-
-    colls.forEach((collection, i) => {
-      var url = constructFieldInfoRequestUrl(collection);
-      requestFieldInfo(url).then(
-        (response) => {
-          let current_collection_info = that.state.collection_field_info;
-          let fields = response.data;
-          current_collection_info[collection] = {};
-          fields.forEach((field, index) => {
-              //console.log(field.name);
-              current_collection_info[collection][field.name] = field;
-              current_collection_info[collection][field.name]["index"] = index;  
-          })
-          //console.log(current_collection_info);
-          that.setState({collection_field_info: current_collection_info});
-        } 
-      )
+    Config.collections.forEach((collection) => {
+      const url = constructFieldInfoRequestUrl(collection);
+      requestFieldInfo(url).then((response) => {
+        setState((current) => {
+          const currentCollectionInfo = { ...current.collection_field_info };
+          currentCollectionInfo[collection] = {};
+          response.data.forEach((field, index) => {
+            currentCollectionInfo[collection][field.name] = {
+              ...field,
+              index
+            };
+          });
+          return {
+            ...current,
+            collection_field_info: currentCollectionInfo
+          };
+        });
+      });
     });
-  }
+  }, []);
 
-  handleItemPinning(item){
-      console.log("Pinned: ", item);
-      let state = this.state;
-      let new_state = {"search_results": this.state.search_results};
-      
-      //search for item within currently pinned features
-      let lookForIt = findWithAttr(this.state.pinned_features, 'id', item.id);
-      console.log("lookForIt:",lookForIt);
+  const handleItemPinning = useCallback((item) => {
+    console.log("Pinned: ", item);
+    setState((current) => {
+      const pinnedFeatures = [...current.pinned_features];
+      const searchResults = current.search_results.map((feature) => ({ ...feature }));
+      const lookForIt = findWithAttr(pinnedFeatures, 'id', item.id);
+      const lookAgain = findWithAttr(searchResults, 'id', item.id);
 
-      //search for item in 
-      let lookAgain = findWithAttr(state.search_results, 'id', item.id);
-      console.log("lookAgain:", lookAgain);
-      
-      new_state.pinned_features = state.pinned_features;
-        
       if (lookForIt >= 0) {
-        new_state.pinned_features.splice(lookForIt, 1);  
-        new_state.search_results[lookAgain].isPinned = false;
+        pinnedFeatures.splice(lookForIt, 1);
+        if (lookAgain >= 0) {
+          searchResults[lookAgain].isPinned = false;
+        }
+      } else if (lookForIt === -1) {
+        pinnedFeatures.push(item);
+        if (lookAgain >= 0) {
+          searchResults[lookAgain].isPinned = true;
+        }
       }
-      else if (lookForIt === -1 ) {
-        new_state.pinned_features.push(item);
-        //debugger;
-        new_state.search_results[lookAgain].isPinned = true;
-        
-      }
 
-      this.setState(new_state);
-  }
+      return {
+        ...current,
+        pinned_features: pinnedFeatures,
+        search_results: searchResults
+      };
+    });
+  }, []);
 
-  toggleSpinner(bool) {
-    this.setState({"showSpinner": bool});
-  }
+  const toggleSpinner = useCallback((bool) => {
+    setState((current) => ({ ...current, showSpinner: bool }));
+  }, []);
 
-  toggleModal(bool) {
-    this.setState({"modalIsOpen": bool});
-  }
+  const search_results = state.search_results;
+  const pinned_features = state.pinned_features;
+  const hover_feature = state.hover_feature;
+  const modalInfo = state.modalInfo;
+  const collection_field_info = state.collection_field_info;
 
-  render() {
-    const search_results = this.state.search_results;
-    const pinned_features = this.state.pinned_features;
-    const hover_feature = this.state.hover_feature;
-    const modalInfo = this.state.modalInfo;
-    const collection_field_info = this.state.collection_field_info;
+  return (
+    <>
+      <div id='modalRoot'></div>
+      <div className="App">
+        <Modal
+          isOpen={state.modalIsOpen}
+          toggleSpinner={toggleSpinner}
+          openModal={openModal}
+          closeModal={closeModal}
+          modalInfo={modalInfo}
+          collectionFieldInfo={collection_field_info}
+        />
 
-    return (
-      //<GeojsonContext.Provider value={geojson}>
-      <>
-        <div id='modalRoot'></div>
-        <div className="App">
-          
-        <Modal isOpen={this.state.modalIsOpen} 
-              toggleSpinner={this.toggleSpinner} 
-              openModal={this.openModal}
-              closeModal={this.closeModal}
-              modalInfo={modalInfo}
-              collectionFieldInfo={collection_field_info}
-              />       
-
-          <header className="App-header">
+        <header className="App-header">
           <h1>
-              <FontAwesomeIcon icon={faMap} size="xl"/>
-                &nbsp;&nbsp;&nbsp;mapsOK&nbsp;&nbsp;&nbsp;
-              <FontAwesomeIcon icon={faMap} size="xl"/>
-            </h1>
-          </header>
+            <FontAwesomeIcon icon={faMap} size="xl"/>
+            &nbsp;&nbsp;&nbsp;mapsOK&nbsp;&nbsp;&nbsp;
+            <FontAwesomeIcon icon={faMap} size="xl"/>
+          </h1>
+        </header>
 
-          <BounceLoader 
-            cssOverride={this.spinner_css}
-            loading={this.state.showSpinner} 
-            color={"#ff6600"}/>
-            <Sidebar 
-              search_results={search_results} 
-              geojson={geojson}
-              updateSearchResults={this.updateSearchResults}
-              onItemMouseOver={this.onItemMouseOver} 
-              onItemMouseOut={this.onItemMouseOut} 
-              openModal={this.openModal} 
-              handleItemPinning={this.handleItemPinning}
-              pinned_features={this.state.pinned_features}
-              reset_sidebar={this.state.reset_sidebar}
-              toggleResetSidebar={this.toggleResetSidebar}
-              />
-          <section className="App-map">
-                <MapView 
-                  hover_feature={hover_feature} 
-                  search_results={search_results} 
-                  pinned_features={pinned_features}
-                  geojson={geojson}
-                  openModal={this.openModal} 
-                  executeSpatialSearch={this.executeSpatialSearch}
-                  toggleResetSidebar={this.toggleResetSidebar}
-                  />  
-          </section>
-        </div>
-        </>
-      //</GeojsonContext.Provider>
-    );
-  }
+        <BounceLoader
+          cssOverride={spinnerCss}
+          loading={state.showSpinner}
+          color={"#ff6600"}/>
+        <Sidebar
+          search_results={search_results}
+          geojson={geojson}
+          updateSearchResults={updateSearchResults}
+          onItemMouseOver={onItemMouseOver}
+          onItemMouseOut={onItemMouseOut}
+          openModal={openModal}
+          handleItemPinning={handleItemPinning}
+          pinned_features={state.pinned_features}
+          reset_sidebar={state.reset_sidebar}
+          toggleResetSidebar={toggleResetSidebar}
+        />
+        <section className="App-map">
+          <MapView
+            hover_feature={hover_feature}
+            search_results={search_results}
+            pinned_features={pinned_features}
+            geojson={geojson}
+            openModal={openModal}
+            executeSpatialSearch={executeSpatialSearch}
+            toggleResetSidebar={toggleResetSidebar}
+          />
+        </section>
+      </div>
+    </>
+  );
 }
 
-export default App;
+export default memo(App);

@@ -80,7 +80,6 @@ const DrawComponent = memo(function DrawComponent(props) {
   let feature_group =  <FeatureGroup>
       <EditControl
         position='topright'
-        //onEdited={console.log("onEdited")}
         onCreated={onCreated}
         onDeleted={onDeleted}
         draw={drawOptions}
@@ -96,8 +95,6 @@ function MapEvents(props) {
   const map = useMap();
   const context = useContext(GeojsonContext);
   const searchContext = useContext(SearchContext);
-  //console.log("MapEvents::GeojsonContext", context);
-  //console.log("MapEvents::SearchContext", searchContext);
   
   const mapEvents = useMapEvents({
     drag: () => {
@@ -119,8 +116,6 @@ function MapEvents(props) {
       if (context.drawnSearchBox === true) {return} 
       console.log("move end");
       context.onMoveEnd(context.assymmetricPad(map.getBounds()), context.geojsonState);
-      //searchContext.resetSidebar();
-      //console.log(searchContext);
     }
   })
   return null
@@ -129,7 +124,6 @@ function MapEvents(props) {
 
 
 function ToggleSearchControl({toggleRedoSearchOnMapMove}){
-  //debugger;
   const onChange = (e) => {
     let bool = e.target.checked;
     toggleRedoSearchOnMapMove(bool);
@@ -139,24 +133,10 @@ function ToggleSearchControl({toggleRedoSearchOnMapMove}){
 }
 function MapView(props) {
   
-    //super(props)
-    //this.OFFSET = 0;
-   // const OFFSET = 0;
-
-    //this.PER_PAGE = 10;
-    //const PER_PAGE = 10;
-
     const [redoSearchOnMapMove, setRedoSearchOnMapMove] = useState(true);
     const [isRectangleShowing, setIsRectangleShowing] = useState(false);
     const [drawnSearchBox, setDrawnSearchBox] = useState(false);
-    //const [geojsonState, setGeojson] = useState({geojson});
-    //const [isRectangleShowing, setIsRectangleShowing] = useState(false);
-    
-    // this.state = {isRectangleShowing: false,
-    //               drawnSearchBox: false,
-    //               geojsonStuff: false,
-    //               geojsonFile: false}
-    
+    const searchRequestRef = useRef(0);
     const DEFAULT_BOUNDS = [
         [
           "-104.15039062500001",
@@ -174,39 +154,15 @@ function MapView(props) {
       zoom: 13
     }
     
-    //const viewport = DEFAULT_VIEWPORT;
-    //const retina = L.Browser.retina ? "@2x": "";
     const rectangleStyleColor = "#8e8e8e";
     const rectangleStyleWeight = 1;
     
     const ok_counties = "https://vectortileservices1.arcgis.com/jWQlP64OuwDh6GGX/arcgis/rest/services/ok_counties_v/VectorTileServer";
     const esri_plss = "https://gis.blm.gov/arcgis/rest/services/Cadastral/BLM_Natl_PLSS_CadNSDI/MapServer";
    
-    //create object refs to access Leafler internals
-    //const mapRef = useRef();
+    //create object refs to access Leaflet internals
     const rectangleRef = useRef();
-    //const geojsonRef = useRef();
 
-    // const getData = useCallback(async () => {
-    //   try {
-    //     const result = await import('./data_mcc_okmaps.json');
-    //     setGeojson(result);
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // }, []);
-  
-    // useEffect(() => {
-    //   window.addEventListener('load', () => {
-    //     getData().then(() => console.log('data loaded successfully'));
-    //   });
-  
-    //   return () => {
-    //     window.removeEventListener('load', () => {
-    //       console.log('page unmounted');
-    //     });
-    //   };
-    // }, [getData]);
 
   const toggleRedoSearchOnMapMove = (bool) => {
     setRedoSearchOnMapMove(bool);
@@ -261,7 +217,7 @@ function MapView(props) {
   }
 
 
-  const onMoveEnd = (rectangle_bounds) => {
+  const onMoveEnd = async (rectangle_bounds) => {
     //console.log("bbox_polygon", bbox_polygon);
     if (!redoSearchOnMapMove){
       return
@@ -269,14 +225,27 @@ function MapView(props) {
     let bbox_str;
     bbox_str = rectangle_bounds.toBBoxString();
     console.log('bbox str:', bbox_str);
-    console.log('onMoveEnd::geojson:', props.geojson);
-    //console.log('onMoveEnd::geojsonState:', geojsonState);
-    
-    let bboxes_with_ratios = MapSearch(bbox_str, props.geojson);
-    //console.log(props);
-    props.executeSpatialSearch(bboxes_with_ratios);
-    props.toggleResetSidebar(true);
-        
+    const requestId = ++searchRequestRef.current;
+    props.toggleSpinner?.(true);
+    try {
+      const results = await MapSearch(bbox_str, props.fgbUrl || props.geojson);
+      if (requestId === searchRequestRef.current) {
+        props.executeSpatialSearch(results);
+        props.toggleResetSidebar(true);
+      }
+    } catch (error) {
+      if (requestId === searchRequestRef.current) {
+        if (props.onSpatialSearchError) {
+          props.onSpatialSearchError(error);
+        } else {
+          console.error('Failed to search map data:', error);
+        }
+      }
+    } finally {
+      if (requestId === searchRequestRef.current) {
+        props.toggleSpinner?.(false);
+      }
+    }
   }
 
 
