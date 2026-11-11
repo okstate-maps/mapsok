@@ -1,4 +1,5 @@
-:HL["/mapsok/_next/static/css/c65fd844d3c98c74.css","style"]
+:HL["/mapsok/_next/static/css/180fe953ff6e06e8.css","style"]
+:HL["https://fonts.googleapis.com/css2?family=Fjalla+One&display=swap","style"]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"_not-found","h":96,"c":"$Q2"}]]
-0:{"b":"cOINKudhs8NcnvfY60o63","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"6H4XlxdVF3RXhsgNGVtNH","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
