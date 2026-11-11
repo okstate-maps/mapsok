@@ -1,15 +1,15 @@
 import React, { useEffect, useRef } from "react";
 import * as Clover from "@nulib/clover";
 //import * as Clover from "../../parts";
-// import type {
-//   CloverCanvasOptions,
-//   PanelLayout,
-//   PanelSection,
-//   PanelSectionLabels,
-//   ItemsLayout,
-//   RootProps,
-// } from "@nulib/clover";
-import PanelPane from "@nulib/clover/";  
+import type {
+  CloverCanvasOptions,
+  PanelLayout,
+  PanelSection,
+  PanelSectionLabels,
+  ItemsLayout,
+  RootProps,
+} from "@nulib/clover";
+import PanelPane from "@nulib/clover";  
 import usePanelPane from "@nulib/clover"
 import BESIDE_REM from "@nulib/clover";
 import PAGE_MIN from "@nulib/clover"; 
